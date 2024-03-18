@@ -157,11 +157,11 @@ print(x)                 # 10
 ### Formalna specyfikacja i składnia języka w notacji EBNF:
 ```
 program = {statement} ;
-declaration = var_declaration | function_definition
+declaration = var_declaration | function_definition ;
 block =  "{" ,  { statement } , "}" ;
 
 statement = declaration   
-| assignment
+            | assignment
         	| print
         	| if
         	| while
@@ -170,7 +170,7 @@ statement = declaration
         	| return
         	| input ;
 
-declaration = "value" , identifier , [ "=" , expression ] ;
+var_declaration = "value" , identifier , [ "=" , expression ] ;
        	 
 assignment = identifier , "=" , expression ;
 
@@ -194,8 +194,8 @@ factor = number | string | bool | identifier | "(" , condition , ")" ;
 identifier = letter , { letter | digit | "_"} ;
 
 number = int_const | float_const ;
+float_const = int_const, ".", {digit, { digit }} ;
 int_const  = digit , {digit} ;
-float_const = int_const {"." digit { digit }} ;
 bool  = "true" | "false" ;
 string = '"' , { character } , '"' ;
 
