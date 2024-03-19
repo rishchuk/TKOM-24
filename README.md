@@ -162,13 +162,13 @@ block =  "{" ,  { statement } , "}" ;
 
 statement = declaration   
             | assignment
-        	| print
-        	| if
-        	| while
-        	| foreach
-        	| function_call
-        	| return
-        	| input ;
+            | print
+            | if
+            | while
+            | foreach
+            | function_call
+            | return
+            | input ;
 
 var_declaration = "value" , identifier , [ "=" , expression ] ;
        	 
@@ -204,11 +204,26 @@ logical_operator = "&&" | "||" ;
 add_sub_operator = "+" | "-" ;
 mul_div_operator = "*" | "/" ;
 
-letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" ;
+letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" 
+       | "H" | "I" | "J" | "K" | "L" | "M" | "N" 
+       | "O" | "P" | "Q" | "R" | "S" | "T" | "U" 
+       | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" 
+       | "c" | "d" | "e" | "f" | "g" | "h" | "i" 
+       | "j" | "k" | "l" | "m" | "n" | "o" | "p" 
+       | "q" | "r" | "s" | "t" | "u" | "v" | "w" 
+       | "x" | "y" | "z" ;
+
 digit = "0" | digit_non_zero ;
 digit_non_zero =  "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 character = letter | digit | special_character ;
-special_character = " " | "!" | "#" | "$" | "%" | "&" | "'" | "(" | ")" | "*" | "+" | "," | "-" | "." | "/" | ":" | ";" | "<" | "=" | ">" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "{" | "|" | "}" | "~" ;
+
+special_character = " " | "!" | "#" | "$" | "%" 
+                  | "&" | "'" | "(" | ")" | "*" 
+                  | "+" | "," | "-" | "." | "/" 
+                  | ":" | ";" | "<" | "=" | ">" 
+                  | "?" | "@" | "[" | "]" | "^" 
+                  | "_" | "`" | "{" | "|" | "}" 
+                  | "~" ;
 ```
 
 ### Obsługa błędów
