@@ -261,6 +261,16 @@ Error line 2:
 Undefined function 'add'
 ```
 
+```
+Error line 2:
+Wrong number of arguments
+```
+
+```
+Error line 2:
+Syntax Error: Expected '}' to close block
+```
+
 ### Sposób uruchomienia
 
 Może być uruchamiany z wiersza poleceń, gdzie użytkownik podaje plik źródłowy jako argument.
