@@ -38,6 +38,14 @@ Typ bool obsługuje następujące operatory: ==, !=, &&, ||
 5.5 - 5 * ( -1)         # 10.5
 ```
 
+##### String + inny typy
+```
+"1.05" + 1.05           # "1.051.05"
+"1.05a" + 1             # "1.05a1"
+2 + 1.5 + "gf"          # "3.5gf"
+1.5 + 2                 # 3.5
+```
+
 ##### Porównanie
 ```
 1 == 1                  # true
@@ -133,6 +141,20 @@ foreach char in word {
 value age = input("Enter your age: ")
 ```
 
+#### 10. Funkcje wbudowane
+```
+5 + int(2.1)            # 7
+```
+
+#### 11. String z atrybutem
+```
+print(!'shoes'.length)  # false
+print(-'shoes'.length)  # -5
+
+value a = "hello"
+print(a.length)         # 5
+```
+
 #### Słaba, dynamiczna typizacja:
 ```
 value x = 5           # x jest teraz liczbą całkowitą (int)
@@ -179,41 +201,35 @@ print(x)                 # 10
 
 ### Formalna specyfikacja i składnia języka w notacji EBNF:
 ```
-program = {statement} ;
+program = {declaration} ;
 declaration = var_declaration | function_definition ;
 block =  "{" ,  { statement } , "}" ;
 
-statement = declaration   
-            | assignment
-            | print
+statement = assignment
+            | var_declaration
             | if
             | while
             | foreach
             | function_call
-            | return
-            | input ;
+            | return ;
 
-var_declaration = "value" , identifier , [ "=" , expression ] ;
+var_declaration = "value" , identifier , [ "=" , condition ] ;
        	 
-assignment = identifier , "=" , expression ;
-
-print = "print" , "("  , expression , ")" ;
+assignment = identifier , "=" , condition ;
 
 if = "if" , condition , block  ;
 while = "while" , condition ,  block ;
 foreach = "foreach" , identifier , "in" , (identifier | string) , block ;
 
 function_definition = "function" , identifier , "(" , [ identifier , { "," , identifier } ] , ")" , block ;
-function_call = identifier , "(" , [ expression , { "," , expression } ] , ")" ;
+function_call = identifier , "(" , [ condition , { "," , condition } ] , ")" ;
 return = "return", [condition] ;
 
-input = "input" , "(" , [ string ] , ")" ;
-
-condition = expression , { comparison_operator , expression } ;
-
-expression = term , { add_sub_operator , term } ;
+condition = expression, {logical_operator , expression} ;
+expression  = additive_expression , { comparison_operator , additive_expression } ;
+additive_expression = term , { add_sub_operator , term } ;
 term = factor , { mul_div_operator , factor } ;
-factor = number | string | bool | identifier | "(" , condition , ")" ;
+factor = ["!" | "-"], (number | string | bool | identifier | "(" , condition , ")"), [ "." , "length" ] ;
 identifier = letter , { letter | digit | "_"} ;
 
 number = int_const | float_const ;
