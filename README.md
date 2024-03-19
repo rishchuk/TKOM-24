@@ -119,7 +119,7 @@ value a = 8
 add(a)
 ```
 
-#### 8 Przykład na stringu
+#### 8. Przykład na stringu
 ```
 value word = "Hello"
 foreach char in word {
@@ -127,7 +127,7 @@ foreach char in word {
 }
 ```
 
-#### 9 Przykładowe wejście
+#### 9. Przykładowe wejście
 ```
 value age = input("Enter your age: ")
 ```
@@ -139,6 +139,28 @@ value x = "hello"     # x jest teraz ciągiem znaków (str)
 value x = true        # x jest teraz wartością logiczną (bool)
 
 ```
+
+#### Zakresy widoczności zmiennych:
+```
+value a = 4
+
+function test(t) {
+    a = 3
+    print(a)          # 3
+    t = t + 1
+    print(t)          # 2
+}
+
+function main() {
+    value t = 1
+    test(t)
+    print(a)          # 3
+    print(t)          # 1
+}
+
+main()
+```
+
 
 #### Przekazywanie argumentów funkcji przez wartość:
 ```
