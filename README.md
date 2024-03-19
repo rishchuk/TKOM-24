@@ -225,8 +225,8 @@ function_definition = "function" , identifier , "(" , [ identifier , { "," , ide
 function_call = identifier , "(" , [ condition , { "," , condition } ] , ")" ;
 return = "return", [condition] ;
 
-condition = expression, {logical_operator , expression} ;
-expression  = additive_expression , { comparison_operator , additive_expression } ;
+condition = expression, { logical_operator , expression } ;
+expression  = additive_expression , [ comparison_operator , additive_expression ] ;
 additive_expression = term , { add_sub_operator , term } ;
 term = factor , { mul_div_operator , factor } ;
 factor = ["!" | "-"], (number | string | bool | identifier | "(" , condition , ")"), [ "." , "length" ] ;
