@@ -217,7 +217,7 @@ identifier = letter , { letter | digit | "_"} ;
 
 number = int_const | float_const ;
 float_const = int_const, ".", digit, { digit } ;
-int_const  = digit , {digit} ;
+int_const  = "0" | digit_non_zero , {digit} ;
 bool  = "true" | "false" ;
 string = '"' , { character } , '"' ;
 
