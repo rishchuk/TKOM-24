@@ -157,6 +157,9 @@ print(a.length)         # 5
 
 #### 12. String z metodami
 ```
+
+print("test".char(0))
+
 print("TeSt".toLower()) # test
 
 value test = "test"
@@ -212,12 +215,11 @@ program = {declaration} ;
 declaration = var_declaration | function_definition ;
 block =  "{" ,  { statement } , "}" ;
 
-statement = assignment
-            | var_declaration
+statement = var_declaration
             | if
             | while
             | foreach
-            | function_call
+            | identifier_or_call, [ "=" , condition ]
             | return ;
 
 var_declaration = "value" , identifier , [ "=" , condition ] ;
@@ -229,26 +231,30 @@ while = "while" , condition ,  block ;
 foreach = "foreach" , identifier , "in" , (identifier | string) , block ;
 
 function_definition = "function" , identifier , "(" , [ identifier , { "," , identifier } ] , ")" , block ;
-function_call = identifier , "(" , [ condition , { "," , condition } ] , ")" ;
+function_call = identifier , "(" , args , ")" ;
 return = "return", [condition] ;
 
-condition = expression, { logical_operator , expression } ;
+condition = conjuction, { logical_or , conjuction } ;
+conjuction = expression, { logical_and , expression} ;
 expression  = additive_expression , [ comparison_operator , additive_expression ] ;
 additive_expression = term , { add_sub_operator , term } ;
 term = factor , { mul_div_operator , factor } ;
-factor = ["!" | "-"], (number | string | bool | identifier | attr_method | "(" , condition , ")") ;
+factor = ["!" | "-"], (number | string | bool | attr_method | "(" , condition , ")") ;
 identifier = letter , { letter | digit | "_"} ;
 
-attr_method = ( identifier | string ), ".", idetifier, ["(", ")"] ;
+attr_method = ( identifier_or_call | string ), { ".", identifier_or_call} ;
+identifier_or_call = identifier , ["(", args , ")"] ; 
+args =  [ condition , { "," , condition } ] ;
 
 number = int_const | float_const ;
 float_const = int_const, ".", digit, { digit } ;
 int_const  = "0" | digit_non_zero , {digit} ;
 bool  = "true" | "false" ;
-string = '"' , { character } , '"' ;
+string = '"' , { character } , '"' ;     (* ESCAPING: \\t = \t *)
 
 comparison_operator = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
-logical_operator = "&&" | "||" ;
+logical_and = "&&" ;
+logical_or = "||" ;
 add_sub_operator = "+" | "-" ;
 mul_div_operator = "*" | "/" ;
 
