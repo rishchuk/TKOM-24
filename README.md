@@ -1,93 +1,345 @@
-# TKOM24L-rishchuk
+## Wstępna dokumentacja projektu
+## Roman Ishchuk
+
+### Zakładana funkcjonalność i przykłady
+#### Język programowania charakteryzuje się następującymi głównymi cechami:
+Po pierwsze, ma słabą, dynamiczną typizację, co oznacza, że typy danych nie są ściśle sprawdzane podczas kompilacji, a zmienne mogą zmieniać swój typ podczas wykonywania programu.
+Ponadto, domyślna zmienność oznacza, że obiekty mogą być zmieniane po utworzeniu.
+Wreszcie, w tym języku przekazywanie argumentów funkcji odbywa się przez wartość, co oznacza, że funkcja otrzymuje tylko kopię obiektu, a nie sam obiekt.
 
 
+#### Typy danych
+W języku występuje tylko kilka rodzajów danych:\
+Wartości logiczne. Istnieją dwa rodzaje wartości logicznych: True i False.\
+Liczby. W języku występują dwa rodzaje liczb: int i float.\
+Ciągi znaków. Ciągi znaków są umieszczone w podwójnych cudzysłowach.
 
-## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+#### Operatory
+| Operator                          | Priorytet     | Asocjatywność  |
+|-----------------------------------|---------------|----------------|
+| ! (operator jednoargumentowy)     | 1 (Najwyższy) | Prawostronny   |
+| * i / (mnożenie i dzielenie)      | 2             | Lewostronny    |
+| + i - (dodawanie i odejmowanie)   | 3             | Lewostronny    |
+| ==, !=, <, <=, >, >= (porównanie) | 4             | Lewostronny    |
+| && (logiczne I)                   | 5             | Lewostronny    |
+| &#124;&#124; (logiczne LUB)       | 6 (Najniższy) | Lewostronny    |
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+#### Typy i operatory
+Typy int i float obsługują następujące operatory: +, -, *, /, %, ==, !=, >, >=, <, <=\
+Typ string obsługuje następujące operatory: +, *, ==, !=\
+Typ bool obsługuje następujące operatory: ==, !=, &&, ||
 
-## Add your files
+##### Arytmetyka
+```
+4 * 1 / 2 + 1 - 1      	# 2
+4 * 3 / (2 + 1)       	# 4
+10.8 / 3.2             	# 3.375
+5.5 - 5 * ( -1)         # 10.5
+```
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+##### String + inny typy
+```
+"1.05" + 1.05           # "1.051.05"
+"1.05a" + 1             # "1.05a1"
+2 + 1.5 + "gf"          # "3.5gf"
+1.5 + 2                 # 3.5
+```
+
+##### Porównanie
+```
+1 == 1                  # true
+1 != 2                  # true
+1 < 2                   # true
+2 > 1                   # true
+1 <= 1	                # true
+1 >= 2                  # false
+(1 == 1) || (1 == 2)    # true
+(1 == 1) && (2 == 2)    # true
+!(1 == 1)               # false
+1 == true               # true
+"text" == "text"        # true
+"hello" != "world"      # true
+```
+
+#### 1. Przykład definicji zmiennych i operacji arytmetycznych:
+```
+value x                # Deklarowanie zmiennej x
+x = 10                 # Ustawinie x na 10
+value y = 5            # Deklaracja zmiennej y i przypisanie jej wartości 5
+value z = (x + y) * 2  # Deklaracja zmiennej z i obliczenie jej wartości
+```
+
+#### 2. Przykład operacji na ciągach znaków:
+```
+value hello = "Hello, "
+value world = "World!"
+print hello + world     # Łączenie ciągów znaków i drukowanie wyniku
+print(hello * 2)
+```
+
+#### 3. Przykład komentarza:
+```
+// To jest komentarz
+# To też jest komentarz
+```
+
+#### 4. Przykład instrukcji warunkowej if:
+```
+if z > 10 && hello == "Hello, " {   
+    print("z is greater than 10 and hello is Hello, ")
+}
+```
+
+#### 5. Przykład pętli while:
+```
+while x > 0 {
+    print(x)
+    x = x - 1
+}
+```
+
+#### 6. Przykład definicji i wywołania funkcji:
+```
+function add(x, y) {
+    value z = x + y
+    print(z)
+}
+
+value a = 10
+value b = 5
+add(a, b)
+```
+*Zmienne a i b są zmiennymi typu „Wartość”
+
+#### 7. Przykład rekursywnego wywołania funkcji
+```
+function add(x) {
+    if x == 5 {
+        return 
+    }
+    if x > 5 {
+        x = x - 1
+        add(x)
+    }
+}
+
+value a = 8
+add(a)
+```
+
+#### 8. Przykład na stringu
+```
+value word = "Hello"
+foreach char in word {
+    print(char)
+}
+```
+
+#### 9. Przykładowe wejście
+```
+value age = input("Enter your age: ")
+```
+
+#### 10. Funkcje wbudowane
+```
+5 + int(2.1)            # 7
+```
+
+#### 11. String z atrybutem
+```
+print(!'shoes'.length)  # false
+print(-'shoes'.length)  # -5
+
+value a = "hello"
+print(a.length)         # 5
+```
+
+#### 12. String z metodami
+```
+
+print("test".char(0))
+
+print("TeSt".toLower()) # test
+
+value test = "test"
+print(test.toUpper())   # TEST
+```
+
+#### Słaba, dynamiczna typizacja:
+```
+value x = 5             # x jest teraz liczbą całkowitą (int)
+value x = "hello"       # x jest teraz ciągiem znaków (str)
+value x = true          # x jest teraz wartością logiczną (bool)
 
 ```
-cd existing_repo
-git remote add origin https://gitlab-stud.elka.pw.edu.pl/TKOM_24L_PG/Roman_Ishchuk/tkom24l-rishchuk.git
-git branch -M main
-git push -uf origin main
+
+#### Zakresy widoczności zmiennych:
+```
+value a = 4
+
+function test(t) {
+    a = 3
+    print(a)            # 3
+    t = t + 1
+    print(t)            # 2
+}
+
+function main() {
+    value t = 1
+    test(t)
+    print(a)            # 3
+    print(t)            # 1
+}
+
+main()
 ```
 
-## Integrate with your tools
 
-- [ ] [Set up project integrations](https://gitlab-stud.elka.pw.edu.pl/TKOM_24L_PG/Roman_Ishchuk/tkom24l-rishchuk/-/settings/integrations)
+#### Przekazywanie argumentów funkcji przez wartość:
+```
+function double_value(x) {
+    x = x * 2
+    return x
+}
 
-## Collaborate with your team
+value x = 10
+print(double_value(x))  # 20
+print(x)                # 10
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
 
-## Test and Deploy
+### Formalna specyfikacja i składnia języka w notacji EBNF:
+```
+program = {declaration} ;
+declaration = var_declaration | function_definition ;
+block =  "{" ,  { statement } , "}" ;
 
-Use the built-in continuous integration in GitLab.
+statement = var_declaration
+            | if
+            | while
+            | foreach
+            | identifier_or_call, [ "=" , condition ]
+            | return ;
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+var_declaration = "value" , identifier , [ "=" , condition ] ;
+       	 
+assignment = identifier , "=" , condition ;
 
-***
+if = "if" , condition , block  ;
+while = "while" , condition ,  block ;
+foreach = "foreach" , identifier , "in" , (identifier | string) , block ;
 
-# Editing this README
+function_definition = "function" , identifier , "(" , [ identifier , { "," , identifier } ] , ")" , block ;
+function_call = identifier , "(" , args , ")" ;
+return = "return", [condition] ;
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+condition = conjuction, { logical_or , conjuction } ;
+conjuction = expression, { logical_and , expression} ;
+expression  = additive_expression , [ comparison_operator , additive_expression ] ;
+additive_expression = term , { add_sub_operator , term } ;
+term = factor , { mul_div_operator , factor } ;
+factor = ["!" | "-"], (number | string | bool | attr_method | "(" , condition , ")") ;
+identifier = letter , { letter | digit | "_"} ;
 
-## Suggestions for a good README
+attr_method = ( identifier_or_call | string ), { ".", identifier_or_call} ;
+identifier_or_call = identifier , ["(", args , ")"] ; 
+args =  [ condition , { "," , condition } ] ;
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+number = int_const | float_const ;
+float_const = int_const, ".", digit, { digit } ;
+int_const  = "0" | digit_non_zero , {digit} ;
+bool  = "true" | "false" ;
+string = '"' , { character } , '"' ;     (* ESCAPING: \\t = \t *)
 
-## Name
-Choose a self-explaining name for your project.
+comparison_operator = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+logical_and = "&&" ;
+logical_or = "||" ;
+add_sub_operator = "+" | "-" ;
+mul_div_operator = "*" | "/" ;
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" 
+       | "H" | "I" | "J" | "K" | "L" | "M" | "N" 
+       | "O" | "P" | "Q" | "R" | "S" | "T" | "U" 
+       | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" 
+       | "c" | "d" | "e" | "f" | "g" | "h" | "i" 
+       | "j" | "k" | "l" | "m" | "n" | "o" | "p" 
+       | "q" | "r" | "s" | "t" | "u" | "v" | "w" 
+       | "x" | "y" | "z" ;
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+digit = "0" | digit_non_zero ;
+digit_non_zero =  "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+character = letter | digit | special_character ;
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+special_character = " " | "!" | "#" | "$" | "%" 
+                  | "&" | "'" | "(" | ")" | "*" 
+                  | "+" | "," | "-" | "." | "/" 
+                  | ":" | ";" | "<" | "=" | ">" 
+                  | "?" | "@" | "[" | "]" | "^" 
+                  | "_" | "`" | "{" | "|" | "}" 
+                  | "~" ;
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### Obsługa błędów
+W przypadku napotkania błędu, zgłaszany jest odpowiedni wyjątek, praca nie jest kontynuowana i użytkownik otrzymuje komunikat o błędzie.\
+Komunikaty o błędach mogą zawierać informacje o mejsce błędu, gdzie zostsał napotkany.
+```
+Error line 2:
+Undefined variable: 'x'
+```
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```
+Error line 2:
+Undefined function 'add'
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+```
+Error line 2:
+Wrong number of arguments
+```
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```
+Error line 2:
+Syntax Error: Expected '}' to close block
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### Sposób uruchomienia
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Może być uruchamiany z wiersza poleceń, gdzie użytkownik podaje plik źródłowy jako argument.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+Po wykonaniu interpretera, można oczekiwać wyjście na konsoli.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+### Analiza wymagań funkcjonalnych i niefunkcjonalnych
 
-## License
-For open source projects, say how it is licensed.
+#### Wymagania funkcjonalne:
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Interpretacja prostego języka programowania z obsługą zmiennych, operacji matematycznych, logicznych, instrukcji warunkowych i pętli.\
+Możliwość definiowania i wywoływania funkcji.\
+Wsparcie dla operacji na ciągach znaków.
+
+#### Wymagania niefunkcjonalne:
+
+Wysoka wydajność i niezawodność interpretera.\
+Obsługa błędów z odpowiednimi komunikatami.
+
+### Opis sposobu realizacji:
+
+Modułów:
+
+Token i Lexer odpowiedzialne za analizę leksykalną.\
+Environment, Interpreter do obsługi semantyki języka i wykonywania kodu.\
+Parser, który analizuje strukturę kodu i generuje drzewo składniowe.
+
+Interakcje między modułami:
+
+Lexer przetwarza źródło i generuje sekwencję tokenów.\
+Parser analizuje tokeny, tworzy drzewo składniowe i generuje instrukcje, które są wykonywane przez Interpreter.
+
+
+### Sposób testowania
+Testowanie projektu polega na przygotowaniu testów jednostkowych i integracyjnych, które sprawdzają poprawność analizy leksykalnej, składniowej i semantycznej. Przykłady testów obejmują:
+
+Sprawdzanie poprawności analizy leksykalnej, czy tokeny są generowane prawidłowo.\
+Analizę składniową, czy parser prawidłowo interpretuje strukturę kodu.\
+Wykonywanie testów na różnych przykładach z różnymi operacjami matematycznymi, logicznymi i operacjami na ciągach znaków.
+Obsługę błędów, takie jak próby użycia niezadeklarowanych zmiennych lub funkcji.
