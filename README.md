@@ -155,11 +155,19 @@ value a = "hello"
 print(a.length)         # 5
 ```
 
+#### 12. String z metodami
+```
+print("TeSt".toLower()) # test
+
+value test = "test"
+print(test.toUpper())   # TEST
+```
+
 #### Słaba, dynamiczna typizacja:
 ```
-value x = 5           # x jest teraz liczbą całkowitą (int)
-value x = "hello"     # x jest teraz ciągiem znaków (str)
-value x = true        # x jest teraz wartością logiczną (bool)
+value x = 5             # x jest teraz liczbą całkowitą (int)
+value x = "hello"       # x jest teraz ciągiem znaków (str)
+value x = true          # x jest teraz wartością logiczną (bool)
 
 ```
 
@@ -169,16 +177,16 @@ value a = 4
 
 function test(t) {
     a = 3
-    print(a)          # 3
+    print(a)            # 3
     t = t + 1
-    print(t)          # 2
+    print(t)            # 2
 }
 
 function main() {
     value t = 1
     test(t)
-    print(a)          # 3
-    print(t)          # 1
+    print(a)            # 3
+    print(t)            # 1
 }
 
 main()
@@ -193,9 +201,8 @@ function double_value(x) {
 }
 
 value x = 10
-print(double_value(x))   # 20
-print(x)                 # 10
-
+print(double_value(x))  # 20
+print(x)                # 10
 ```
 
 
@@ -229,8 +236,10 @@ condition = expression, { logical_operator , expression } ;
 expression  = additive_expression , [ comparison_operator , additive_expression ] ;
 additive_expression = term , { add_sub_operator , term } ;
 term = factor , { mul_div_operator , factor } ;
-factor = ["!" | "-"], (number | string | bool | identifier | "(" , condition , ")"), [ "." , "length" ] ;
+factor = ["!" | "-"], (number | string | bool | identifier | attr_method | "(" , condition , ")") ;
 identifier = letter , { letter | digit | "_"} ;
+
+attr_method = ( identifier | string ), ".", idetifier, ["(", ")"] ;
 
 number = int_const | float_const ;
 float_const = int_const, ".", digit, { digit } ;
