@@ -85,7 +85,7 @@ class TestLexer(unittest.TestCase):
         code = io.StringIO("""
         if while foreach in value return function identifier 
         10 10.5 true false "string" = + - * / < > () {} == != <= >= && || #
-        $ , .
+        $ , . !
         """
                            )
         lexer = Lexer(CharacterReader(code))
@@ -129,69 +129,54 @@ class TestLexer(unittest.TestCase):
         self.assertEqual(char.position.line, 2)
         self.assertEqual(char.position.column, 2)
 
-    def test_peek_returns_next_character(self):
-        source = io.StringIO("value")
-        reader = CharacterReader(source)
-        self.assertEqual(reader.peek(), 'v')
-        reader.get_next_character()
-        self.assertEqual(reader.peek(), 'a')
-        reader.get_next_character()
-        self.assertEqual(reader.peek(), 'l')
-        reader.get_next_character()
-        self.assertEqual(reader.peek(), 'u')
-        reader.get_next_character()
-        self.assertEqual(reader.peek(), 'e')
-        reader.get_next_character()
-        self.assertEqual(reader.peek(), '\x03')
-
     def test_build_int_numbers(self):
         code = io.StringIO('123')
         lexer = Lexer(CharacterReader(code))
-        token = lexer.build_number(1)
+        token = lexer.try_build_number(1)
         self.assertEqual(token.type, TokenType.INT_CONST)
         self.assertEqual(token.value, 123)
 
         code = io.StringIO('0')
         lexer = Lexer(CharacterReader(code))
-        token = lexer.build_number(1)
+        token = lexer.try_build_number(1)
         self.assertEqual(token.type, TokenType.INT_CONST)
         self.assertEqual(token.value, 0)
 
     def test_build_float_numbers(self):
         code = io.StringIO('12.5')
         lexer = Lexer(CharacterReader(code))
-        token = lexer.build_number(1)
+        token = lexer.try_build_number(1)
         self.assertEqual(token.type, TokenType.FLOAT_CONST)
         self.assertEqual(token.value, 12.5)
 
         code = io.StringIO('0.5')
         lexer = Lexer(CharacterReader(code))
-        token = lexer.build_number(1)
+        token = lexer.try_build_number(1)
         self.assertEqual(token.type, TokenType.FLOAT_CONST)
         self.assertEqual(token.value, 0.5)
 
     def test_build_string(self):
         code = io.StringIO('"12.5"')
         lexer = Lexer(CharacterReader(code))
-        token = lexer.build_string(1)
+        token = lexer.try_build_string(1)
         self.assertEqual(token.type, TokenType.STRING)
         self.assertEqual(token.value, "12.5")
 
         code = io.StringIO('"Hello !"')
         lexer = Lexer(CharacterReader(code))
-        token = lexer.build_string(1)
+        token = lexer.try_build_string(1)
         self.assertEqual(token.type, TokenType.STRING)
         self.assertEqual(token.value, "Hello !")
 
     def test_build_keyword_or_identifier(self):
         code = io.StringIO('value')
         lexer = Lexer(CharacterReader(code))
-        token = lexer.build_keyword_or_identifier(1)
+        token = lexer.try_build_keyword_or_identifier(1)
         self.assertEqual(token.type, TokenType.VALUE)
 
         code = io.StringIO('print')
         lexer = Lexer(CharacterReader(code))
-        token = lexer.build_keyword_or_identifier(1)
+        token = lexer.try_build_keyword_or_identifier(1)
         self.assertEqual(token.type, TokenType.IDENTIFIER)
 
     def test_end_token(self):
@@ -249,12 +234,6 @@ class TestLexer(unittest.TestCase):
         self.assertEqual(token.value, 'value')
         self.assertEqual(token.position.line, 3)
         self.assertEqual(token.position.column, 1)
-
-    def test_peek_end_of_text(self):
-        code = io.StringIO('=')
-        reader = CharacterReader(code)
-        reader.get_next_character()
-        self.assertEqual(reader.peek(), '\x03')
 
 
 if __name__ == '__main__':
