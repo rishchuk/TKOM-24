@@ -132,6 +132,7 @@ class Lexer:
         self.IDENTIFIER_MAX_LENGTH = identifier_max_length
         self.reader = reader
         self.current_char = self.reader.get_next_character()
+        self.start_position = Position()
 
     def advance(self):
         self.current_char = self.reader.get_next_character()
@@ -140,14 +141,14 @@ class Lexer:
         while self.current_char.isspace():
             self.advance()
 
-    def try_build_comment(self, start_position):
+    def try_build_comment(self):
         if self.current_char == '#':
             self.advance()
             builder = []
             while self.current_char != '\n' and self.current_char != '\x03':  # ETX
                 builder.append(self.current_char)
                 self.advance()
-            return Token(TokenType.COMMENT, start_position, ''.join(builder))
+            return Token(TokenType.COMMENT, self.start_position, ''.join(builder))
         return None
 
     def try_build_etx(self):
@@ -157,78 +158,77 @@ class Lexer:
 
     def get_next_token(self):
         self.skip_whitespace()
-        start_position = copy(self.reader.position)
+        self.start_position = copy(self.reader.position)
 
         token = self.try_build_etx() \
-            or self.try_build_comment(start_position) \
-            or self.try_build_keyword_or_identifier(start_position) \
-            or self.try_build_number(start_position) \
-            or self.try_build_string(start_position) \
-            or self.try_build_logical_operator('&&', TokenType.AND_OPERATOR, start_position) \
-            or self.try_build_logical_operator('||', TokenType.OR_OPERATOR, start_position) \
-            or self.try_build_one_or_two_char_operator('==', TokenType.EQUAL, TokenType.EQUALS, start_position) \
-            or self.try_build_one_or_two_char_operator('!=', TokenType.NEG, TokenType.NOT_EQUALS, start_position) \
-            or self.try_build_one_or_two_char_operator('<=', TokenType.LESS, TokenType.LESS_THAN_OR_EQUAL,
-                                                       start_position) \
-            or self.try_build_one_or_two_char_operator('>=', TokenType.GREATER, TokenType.GREATER_THAN_OR_EQUAL,
-                                                       start_position) \
-            or self.try_build_one_char_operator(start_position) \
-            or self.build_undefined(start_position)
+            or self.try_build_comment() \
+            or self.try_build_keyword_or_identifier() \
+            or self.try_build_number() \
+            or self.try_build_string() \
+            or self.try_build_logical_operator('&&', TokenType.AND_OPERATOR) \
+            or self.try_build_logical_operator('||', TokenType.OR_OPERATOR) \
+            or self.try_build_one_or_two_char_operator('==', TokenType.EQUAL, TokenType.EQUALS) \
+            or self.try_build_one_or_two_char_operator('!=', TokenType.NEG, TokenType.NOT_EQUALS) \
+            or self.try_build_one_or_two_char_operator('<=', TokenType.LESS, TokenType.LESS_THAN_OR_EQUAL) \
+            or self.try_build_one_or_two_char_operator('>=', TokenType.GREATER, TokenType.GREATER_THAN_OR_EQUAL) \
+            or self.try_build_one_char_operator() \
+            or self.build_undefined()
 
         return token
 
-    def try_build_logical_operator(self, value, token_type, start_position):
+    def try_build_logical_operator(self, value, token_type):
         if self.current_char != value[0]:
             return None
 
         self.advance()
         if self.current_char == value[1]:
             self.advance()
-            return Token(token_type, start_position)
+            return Token(token_type, self.start_position)
         return None
 
-    def try_build_one_char_operator(self, start_position):
+    def try_build_one_char_operator(self):
         if self.current_char in OPERATORS:
             token_type = OPERATORS[self.current_char]
             self.advance()
-            return Token(token_type, start_position)
+            return Token(token_type, self.start_position)
         return None
 
-    def try_build_one_or_two_char_operator(self, value, one_token_char, two_token_char, start_position):
+    def try_build_one_or_two_char_operator(self, value, one_token_char, two_token_char):
         if self.current_char != value[0]:
             return None
 
         self.advance()
         if self.current_char == value[1]:
             self.advance()
-            return Token(two_token_char, start_position)
+            return Token(two_token_char, self.start_position)
         else:
-            return Token(one_token_char, start_position)
+            return Token(one_token_char, self.start_position)
 
-    def build_undefined(self, start_position):
+    def build_undefined(self):
         builder = []
         while self.current_char and not self.current_char.isspace() and self.current_char != '\x03':
             builder.append(self.current_char)
             self.advance()
 
-        return Token(TokenType.UNDEFINED, start_position, ''.join(builder))
+        return Token(TokenType.UNDEFINED, self.start_position, ''.join(builder))
 
-    def try_build_keyword_or_identifier(self, start_position):
+    def try_build_keyword_or_identifier(self):
         if self.current_char.isalpha() or self.current_char == "_":
             builder = []
             while self.current_char.isalnum() or self.current_char == "_":
                 if len(builder) == self.IDENTIFIER_MAX_LENGTH:
                     raise ValueError(f"Identifier length have the maximum limit of {self.IDENTIFIER_MAX_LENGTH}"
-                                     f" characters at at Line: {start_position.line}, Column: {start_position.column}")
+                                     f" characters at at Line: {self.start_position.line}, "
+                                     f"Column: {self.start_position.column}")
                 builder.append(self.current_char)
                 self.advance()
             value = ''.join(builder)
             token_type = KEYWORDS.get(value, TokenType.IDENTIFIER)
 
-            return Token(token_type, start_position, value)
+            return Token(token_type, self.start_position, value)
         return None
 
-    def try_build_number(self, start_position):
+    def try_build_number(self):
         if not self.current_char.isdecimal():
             return None
 
@@ -239,12 +239,13 @@ class Lexer:
             if (sys.maxsize - value) // 10 >= value:
                 value = value * 10 + int(self.current_char)
             else:
-                raise ValueError(f"Integer overflow at Line: {start_position.line}, Column: {start_position.column}")
+                raise ValueError(f"Integer overflow at Line: {self.start_position.line}, "
+                                 f"Column: {self.start_position.column}")
 
             self.advance()
 
         if self.current_char != '.':
-            return Token(TokenType.INT_CONST, start_position, value)
+            return Token(TokenType.INT_CONST, self.start_position, value)
 
         self.advance()
 
@@ -252,16 +253,17 @@ class Lexer:
         decimal_length = 0
         while self.current_char.isdecimal():
             if decimal_length > sys.float_info.dig:
-                raise ValueError(f"Float overflow at Line: {start_position.line}, Column: {start_position.column}")
+                raise ValueError(f"Float overflow at Line: {self.start_position.line}, "
+                                 f"Column: {self.start_position.column}")
 
             decimal_part = decimal_part * 10 + int(self.current_char)
             decimal_length += 1
             self.advance()
 
         value += decimal_part / 10 ** decimal_length
-        return Token(TokenType.FLOAT_CONST, start_position, value)
+        return Token(TokenType.FLOAT_CONST, self.start_position, value)
 
-    def try_build_string(self, start_position):
+    def try_build_string(self):
         if self.current_char == '"':
             builder = []
             self.advance()
@@ -271,7 +273,8 @@ class Lexer:
                     raise ValueError(f"String length exceeds the maximum limit of {self.STRING_MAX_LENGTH} characters")
                 elif self.current_char == '\x03' or self.current_char == '\n':
                     raise SyntaxError(
-                        f"Unterminated string literal at Line: {start_position.line}, Column: {start_position.column}")
+                        f"Unterminated string literal at Line: {self.start_position.line}, "
+                        f"Column: {self.start_position.column}")
                 elif self.current_char == '\\':
                     self.advance()
                     builder.append(self.handle_escaped_character())
@@ -281,7 +284,7 @@ class Lexer:
 
             self.advance()
 
-            return Token(TokenType.STRING, start_position, ''.join(builder))
+            return Token(TokenType.STRING, self.start_position, ''.join(builder))
         return None
 
     def handle_escaped_character(self):
@@ -294,8 +297,8 @@ class Lexer:
         elif self.current_char == '\\':
             return '\\'
         else:
-            raise SyntaxError(f"Invalid escape character \\{self.current_char} at Line: {self.reader.position.line}, "
-                              f"Column: {self.reader.position.column}")
+            raise SyntaxError(f"Invalid escape character \\{self.current_char} at "
+                              f"Line: {self.start_position.line}, Column: {self.start_position.column}")
 
 
 if __name__ == '__main__':

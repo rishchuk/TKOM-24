@@ -1,7 +1,5 @@
 import io
-import sys
-
-from lexer.lexer import Lexer, CharacterReader, TokenType, Position
+from lexer.lexer import Lexer, CharacterReader, TokenType
 import unittest
 from sys import maxsize
 
@@ -33,6 +31,11 @@ class TestLexer(unittest.TestCase):
     def test_unterminated_string_literal(self):
         code = io.StringIO('"string')
         lexer = Lexer(CharacterReader(code))
+        with self.assertRaises(SyntaxError):
+            lexer.get_next_token()
+
+    def test_build_string_with_invalid_escape_character(self):
+        lexer = Lexer(CharacterReader(io.StringIO('"Hello,\\gWorld!"')))
         with self.assertRaises(SyntaxError):
             lexer.get_next_token()
 
@@ -107,7 +110,7 @@ class TestLexer(unittest.TestCase):
         source = io.StringIO("# This is comment")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_comment(Position())
+        token = lexer.try_build_comment()
         self.assertEqual(token.type, TokenType.COMMENT)
 
     def test_try_build_etx(self):
@@ -121,52 +124,52 @@ class TestLexer(unittest.TestCase):
         source = io.StringIO("&&")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_logical_operator('&&', TokenType.AND_OPERATOR, Position())
+        token = lexer.try_build_logical_operator('&&', TokenType.AND_OPERATOR)
         self.assertEqual(token.type, TokenType.AND_OPERATOR)
 
     def test_try_build_logical_operator_or(self):
         source = io.StringIO("||")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_logical_operator('||', TokenType.OR_OPERATOR, Position())
+        token = lexer.try_build_logical_operator('||', TokenType.OR_OPERATOR)
         self.assertEqual(token.type, TokenType.OR_OPERATOR)
 
     def test_try_build_one_char_operator(self):
         source = io.StringIO("+")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_one_char_operator(Position())
+        token = lexer.try_build_one_char_operator()
         self.assertEqual(token.type, TokenType.ADD_OPERATOR)
 
         source = io.StringIO("(")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_one_char_operator(Position())
+        token = lexer.try_build_one_char_operator()
         self.assertEqual(token.type, TokenType.LEFT_PARENT)
 
         source = io.StringIO(",")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_one_char_operator(Position())
+        token = lexer.try_build_one_char_operator()
         self.assertEqual(token.type, TokenType.COMMA)
 
         source = io.StringIO(".")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_one_char_operator(Position())
+        token = lexer.try_build_one_char_operator()
         self.assertEqual(token.type, TokenType.DOT)
 
     def test_try_build_one_or_two_char_operator(self):
         source = io.StringIO("==")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_one_or_two_char_operator('==', TokenType.EQUAL, TokenType.EQUALS, Position())
+        token = lexer.try_build_one_or_two_char_operator('==', TokenType.EQUAL, TokenType.EQUALS)
         self.assertEqual(token.type, TokenType.EQUALS)
 
         source = io.StringIO("=")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_one_or_two_char_operator('==', TokenType.EQUAL, TokenType.EQUALS, Position())
+        token = lexer.try_build_one_or_two_char_operator('==', TokenType.EQUAL, TokenType.EQUALS)
         self.assertEqual(token.type, TokenType.EQUAL)
 
     def test_build_undefined_token(self):
@@ -182,28 +185,28 @@ class TestLexer(unittest.TestCase):
         source = io.StringIO("number")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_keyword_or_identifier(Position())
+        token = lexer.try_build_keyword_or_identifier()
         self.assertEqual(token.type, TokenType.IDENTIFIER)
         self.assertEqual(token.value, "number")
 
         source = io.StringIO("if")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_keyword_or_identifier(Position())
+        token = lexer.try_build_keyword_or_identifier()
         self.assertEqual(token.type, TokenType.IF)
         self.assertEqual(token.value, "if")
 
         source = io.StringIO("number_odd")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_keyword_or_identifier(Position())
+        token = lexer.try_build_keyword_or_identifier()
         self.assertEqual(token.type, TokenType.IDENTIFIER)
         self.assertEqual(token.value, "number_odd")
 
         source = io.StringIO("number1")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_keyword_or_identifier(Position())
+        token = lexer.try_build_keyword_or_identifier()
         self.assertEqual(token.type, TokenType.IDENTIFIER)
         self.assertEqual(token.value, "number1")
 
@@ -211,14 +214,14 @@ class TestLexer(unittest.TestCase):
         source = io.StringIO("123")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_number(Position())
+        token = lexer.try_build_number()
         self.assertEqual(token.type, TokenType.INT_CONST)
         self.assertEqual(token.value, 123)
 
         source = io.StringIO("3.14")
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_number(Position())
+        token = lexer.try_build_number()
         self.assertEqual(token.type, TokenType.FLOAT_CONST)
         self.assertAlmostEqual(token.value, 3.14)
 
@@ -226,30 +229,37 @@ class TestLexer(unittest.TestCase):
         source = io.StringIO('"Hello, World!"')
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_string(Position())
+        token = lexer.try_build_string()
         self.assertEqual(token.type, TokenType.STRING)
         self.assertEqual(token.value, "Hello, World!")
 
         source = io.StringIO('"Hello,\\nWorld!"')
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_string(Position())
+        token = lexer.try_build_string()
         self.assertEqual(token.type, TokenType.STRING)
         self.assertEqual(token.value, "Hello,\nWorld!")
 
         source = io.StringIO('"Hello,\\tWorld!"')
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_string(Position())
+        token = lexer.try_build_string()
         self.assertEqual(token.type, TokenType.STRING)
         self.assertEqual(token.value, "Hello,\tWorld!")
 
         source = io.StringIO('"Hello, \\"World!\\""')
         reader = CharacterReader(source)
         lexer = Lexer(reader)
-        token = lexer.try_build_string(Position())
+        token = lexer.try_build_string()
         self.assertEqual(token.type, TokenType.STRING)
         self.assertEqual(token.value, 'Hello, "World!"')
+
+        source = io.StringIO('"123"')
+        reader = CharacterReader(source)
+        lexer = Lexer(reader)
+        token = lexer.try_build_string()
+        self.assertEqual(token.type, TokenType.STRING)
+        self.assertEqual(token.value, '123')
 
     def test_get_next_character(self):
         code = io.StringIO('value x')
@@ -293,11 +303,6 @@ class TestLexer(unittest.TestCase):
         self.assertEqual(token.position.line, 1)
         self.assertEqual(token.position.column, 1)
 
-    def test_build_string_with_invalid_escape_character(self):
-        lexer = Lexer(CharacterReader(io.StringIO('"Hello,\\gWorld!"')))
-        with self.assertRaises(SyntaxError):
-            lexer.get_next_token()
-
     def test_position_tokens(self):
         code = io.StringIO("value x\n" +
                            "x = 10\n"
@@ -334,6 +339,21 @@ class TestLexer(unittest.TestCase):
         self.assertEqual(token.value, 'value')
         self.assertEqual(token.position.line, 3)
         self.assertEqual(token.position.column, 1)
+
+        token = lexer.get_next_token()
+        self.assertEqual(token.value, 'y')
+        self.assertEqual(token.position.line, 3)
+        self.assertEqual(token.position.column, 7)
+
+        token = lexer.get_next_token()
+        self.assertEqual(token.value, None)
+        self.assertEqual(token.position.line, 3)
+        self.assertEqual(token.position.column, 9)
+
+        token = lexer.get_next_token()
+        self.assertEqual(token.value, 5)
+        self.assertEqual(token.position.line, 3)
+        self.assertEqual(token.position.column, 11)
 
 
 if __name__ == '__main__':
