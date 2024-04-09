@@ -164,8 +164,8 @@ class Lexer:
             or self.try_build_keyword_or_identifier(start_position) \
             or self.try_build_number(start_position) \
             or self.try_build_string(start_position) \
-            or self.try_build_two_char_operators('&&', TokenType.AND_OPERATOR, start_position) \
-            or self.try_build_two_char_operators('||', TokenType.OR_OPERATOR, start_position) \
+            or self.try_build_logical_operator('&&', TokenType.AND_OPERATOR, start_position) \
+            or self.try_build_logical_operator('||', TokenType.OR_OPERATOR, start_position) \
             or self.try_build_one_or_two_char_operator('==', TokenType.EQUAL, TokenType.EQUALS, start_position) \
             or self.try_build_one_or_two_char_operator('!=', TokenType.NEG, TokenType.NOT_EQUALS, start_position) \
             or self.try_build_one_or_two_char_operator('<=', TokenType.LESS, TokenType.LESS_THAN_OR_EQUAL,
@@ -177,19 +177,19 @@ class Lexer:
 
         return token
 
-    def try_build_one_char_operator(self, start_position):
-        if self.current_char in OPERATORS:
-            token_type = OPERATORS[self.current_char]
-            self.advance()
-            return Token(token_type, start_position)
-        return None
-
-    def try_build_two_char_operators(self, value, token_type, start_position):
+    def try_build_logical_operator(self, value, token_type, start_position):
         if self.current_char != value[0]:
             return None
 
         self.advance()
         if self.current_char == value[1]:
+            self.advance()
+            return Token(token_type, start_position)
+        return None
+
+    def try_build_one_char_operator(self, start_position):
+        if self.current_char in OPERATORS:
+            token_type = OPERATORS[self.current_char]
             self.advance()
             return Token(token_type, start_position)
         return None
