@@ -1,0 +1,50 @@
+value x = 12.5
+x = true
+x = 10
+value y = 5
+value z = (x + y) * 2
+
+value hello = "Hello, "
+value world = "World!"
+print(hello + world)
+print(hello * 2)
+
+# if statement
+if z >= 10 && hello == "Hello, " {
+    print("z is greater than 10 and hello is Hello, ")
+}
+
+# while loop
+while x > 0 {
+    print x
+    x = x - 1
+}
+
+# function definition and call
+function add(x, y) {
+    value z = x + y
+    print(z)
+}
+
+value a = 10
+value b = 5
+add(a, b)
+
+# recursive function call
+function recursive_add(x) {
+    if x == 5 {
+        return
+    }
+    if x >= 5 {
+        x = x - 1
+        recursive_add(x)
+    }
+}
+
+value a = "hello"
+print(a.length)         # 5
+
+value word = input()
+
+value c = 8
+recursive_add(c)
