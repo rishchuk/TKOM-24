@@ -68,6 +68,13 @@ class BinaryOperation(Node):
         self.right = right
 
 
+class UnaryOperation(Node):
+    def __init__(self, operator, right, position):
+        super().__init__(position)
+        self.operator = operator
+        self.right = right
+
+
 class Literal(Node):
     def __init__(self, value, data_type, position):
         super().__init__(position)
@@ -130,6 +137,8 @@ class Parser:
         return Program(statements)
 
     def parse_statements(self):
+        # var_declaration | if | while | foreach |
+        # identifier_or_call, [ "=" , condition ] | return ;
         return (
             self.parse_variable_declaration() or self.parse_if_statement()
             or self.parse_while_statement() or self.parse_foreach_statement()
@@ -137,28 +146,14 @@ class Parser:
         )
 
     def parse_statement(self):
+        # function_definition | var_declaration | if | while | foreach |
+        # identifier_or_call, [ "=" , condition ] | return ;
         return (
             self.parse_function_definition() or self.parse_variable_declaration() or
             self.parse_if_statement() or self.parse_while_statement() or
             self.parse_foreach_statement() or self.parse_return_statement() or
             self.parse_assignment_or_function_call()
         )
-        # if self.token.type == TokenType.FUNCTION:
-        #     return self.parse_function_definition()
-        # if self.token.type == TokenType.VALUE:
-        #     return self.parse_variable_declaration()
-        # elif self.token.type == TokenType.IDENTIFIER:
-        #     return self.parse_assignment_or_function_call()
-        # elif self.token.type == TokenType.RETURN:
-        #     return self.parse_return_statement()
-        # elif self.token.type == TokenType.IF:
-        #     return self.parse_if_statement()
-        # elif self.token.type == TokenType.WHILE:
-        #     return self.parse_while_statement()
-        # elif self.token.type == TokenType.FOREACH:
-        #     return self.parse_foreach_statement()
-        # else:
-        #     return None
 
     def parse_function_definition(self):
         # function_definition = "function" , identifier , "(" , parameters , ")" , block ;
@@ -187,6 +182,7 @@ class Parser:
         return params
 
     def parse_block(self):
+        # block = "{", {statement}, "}";
         position = self.token.position
         if not self.must_be(TokenType.LEFT_BRACE):
             return None
@@ -197,6 +193,7 @@ class Parser:
         return Block(statements)
 
     def parse_foreach_statement(self):
+        # foreach = "foreach", identifier, "in", (identifier | string), block;
         position = self.token.position
         if not self.must_be(TokenType.FOREACH):
             return None
@@ -207,6 +204,7 @@ class Parser:
         return ForeachStatement(loop_variable, iterable_expr, block, position)
 
     def parse_return_statement(self):
+        # return = "return", [condition];
         position = self.token.position
         if not self.must_be(TokenType.RETURN):
             return None
@@ -214,6 +212,7 @@ class Parser:
         return ReturnStatement(value_expr, position)
 
     def parse_if_statement(self):
+        # if = "if" , condition , block  ;
         position = self.token.position
         if not self.must_be(TokenType.IF):
             return None
@@ -222,6 +221,7 @@ class Parser:
         return IfStatement(condition, block, position)
 
     def parse_while_statement(self):
+        # while = "while" , condition ,  block ;
         position = self.token.position
         if not self.must_be(TokenType.WHILE):
             return None
@@ -230,20 +230,21 @@ class Parser:
         return WhileStatement(condition, block, position)
 
     def parse_variable_declaration(self):
+        # var_declaration = "value" , identifier , [ "=" , condition ] ;
         position = self.token.position
 
         if not self.must_be(TokenType.VALUE):
             return None
 
         name = self.must_be(TokenType.IDENTIFIER)
-        if self.token.type == TokenType.EQUAL:
-            self.advance()
+        if self.must_be(TokenType.EQUAL):
             value_expr = self.parse_expression()
         else:
             value_expr = None
         return VariableDeclaration(name, value_expr, position)
 
     def parse_assignment_or_function_call(self):
+        # identifier_or_call = identifier , ["(", args , ")"] ;
         position = self.token.position
         if not (name := self.must_be(TokenType.IDENTIFIER)):
             return None
@@ -252,9 +253,10 @@ class Parser:
         if assignment := self.parse_assignment(name):
             return assignment
         else:
-            raise SyntaxError("Expected '(' or '=' after identifier")
+            raise SyntaxError(f"Expected '(' or '=' after identifier in {position}")
 
     def parse_function_call(self, name):
+        # function_call = identifier , "(" , args , ")"
         position = self.token.position
         if not self.must_be(TokenType.LEFT_PARENT):
             return None
@@ -263,6 +265,7 @@ class Parser:
         return FunctionCall(name, args, position)
 
     def parse_arguments(self):
+        # args =  [ condition , { "," , condition } ] ;
         args = []
         while self.token.type != TokenType.RIGHT_PARENT:
             arg = self.parse_expression()
@@ -274,6 +277,7 @@ class Parser:
         return args
 
     def parse_assignment(self, expression_identifier):
+        # assignment = identifier , "=" , condition ;
         position = self.token.position
         if not self.must_be(TokenType.EQUAL):
             return None
@@ -361,52 +365,65 @@ class Parser:
         return left_expr
 
     def parse_unary(self):
-        # if self.token.type == TokenType.MINUS_OPERATOR:
+        # factor = ["!" | "-"], (number | string | bool | attr_method | "(", condition, ")");
+        position = self.token.position
         if operator := self.must_be(TokenType.MINUS_OPERATOR) or \
                                         self.must_be(TokenType.NEG):
-            position = self.token.position
-            self.advance()
-            operand = self.parse_primary()
-            # if operand is not None:
-            #     return UnaryOperation(operator, operand, position)
-            raise SyntaxError(f"Expected primary expression in {position}")
+            right = self.parse_primary()
+            if not right:
+                raise SyntaxError(f"Expected primary expression in {position}")
 
+            return UnaryOperation(operator, right, position)
         return self.parse_primary()
 
     def parse_primary(self):
-        if self.token.type == TokenType.IDENTIFIER:
-            return self.parse_identifier()
-        elif self.token.type == TokenType.INT_CONST:
-            return self.parse_literal(TokenType.INT_CONST)
-        elif self.token.type == TokenType.FLOAT_CONST:
-            return self.parse_literal(TokenType.FLOAT_CONST)
-        elif self.token.type == TokenType.TRUE_CONST or self.token.type == TokenType.FALSE_CONST:
-            return self.parse_literal(TokenType.TRUE_CONST)
-        elif self.token.type == TokenType.STRING:
-            return self.parse_literal(TokenType.STRING)
-        elif self.token.type == TokenType.LEFT_PARENT:
-            return self.parse_parenthesized_expression()
-        else:
-            raise SyntaxError(f"Unexpected token: {self.token.type}")
+        return (
+            self.parse_identifier() or self.parse_literal() or
+            self.parse_parenthesized_expression()
+
+        )
+        # if self.token.type == TokenType.IDENTIFIER:
+        #     return self.parse_identifier()
+        # elif self.token.type == TokenType.INT_CONST:
+        #     return self.parse_literal(TokenType.INT_CONST)
+        # elif self.token.type == TokenType.FLOAT_CONST:
+        #     return self.parse_literal(TokenType.FLOAT_CONST)
+        # elif self.token.type == TokenType.TRUE_CONST or self.token.type == TokenType.FALSE_CONST:
+        #     return self.parse_literal(TokenType.TRUE_CONST)
+        # elif self.token.type == TokenType.STRING:
+        #     return self.parse_literal(TokenType.STRING)
+        # elif self.token.type == TokenType.LEFT_PARENT:
+        #     return self.parse_parenthesized_expression()
+        # else:
+        #     raise SyntaxError(f"Unexpected token: {self.token.type}")
 
     def parse_identifier(self):
-        name = self.token.value
         position = self.token.position
-        self.advance()
+        if not (name := self.must_be(TokenType.IDENTIFIER)):
+            return None
         if self.token.type == TokenType.LEFT_PARENT:
             return self.parse_function_call(name)
         else:
             return VariableDeclaration(name, None, position)
 
-    def parse_literal(self, data_type):
+    def parse_literal(self):
         value = self.token.value
         position = self.token.position
-        self.advance()
-        return Literal(value, data_type, position)
+
+        if self.must_be(TokenType.INT_CONST):
+            return Literal(value, TokenType.INT_CONST, position)
+        if self.must_be(TokenType.FLOAT_CONST):
+            return Literal(value, TokenType.FLOAT_CONST, position)
+        if self.must_be(TokenType.TRUE_CONST):
+            return Literal(value, TokenType.TRUE_CONST, position)
+        if self.must_be(TokenType.FALSE_CONST):
+            return Literal(value, TokenType.FALSE_CONST, position)
+        if self.must_be(TokenType.STRING):
+            return Literal(value, TokenType.STRING, position)
+        return None
 
     def parse_parenthesized_expression(self):
         position = self.token.position
-        self.must_be_(TokenType.LEFT_PARENT, f"Expected '(' before expression in {position}")
         expression = self.parse_expression()
         self.must_be_(TokenType.RIGHT_PARENT, f"Expected ')' after expression in {position}")
         return expression
