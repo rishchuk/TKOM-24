@@ -387,7 +387,7 @@ class Parser:
                        self.must_be(TokenType.NEG):
             right = self.parse_primary()
             if not right:
-                raise SyntaxError(f"Missing  unary expression")
+                raise SyntaxError(f"Missing unary expression")
 
             return UnaryOperation(operator, right, position)
         return self.parse_primary()
