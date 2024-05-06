@@ -177,7 +177,7 @@ class Lexer:
         if token:
             return token
         else:
-            raise # blad
+            raise SyntaxError('Unknown token')
 
     def try_build_logical_operator(self, value, token_type):
         if self.current_char != value[0]:
@@ -187,7 +187,7 @@ class Lexer:
         if self.current_char == value[1]:
             self.advance()
             return Token(token_type, self.start_position)
-        return None  # blad
+        raise SyntaxError('Unknown token')
 
     def try_build_one_char_operator(self):
         if self.current_char in OPERATORS:
