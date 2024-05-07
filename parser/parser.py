@@ -223,7 +223,8 @@ class Parser:
         position = self.token.position
         if not self.must_be(TokenType.IF):
             return None
-        condition = self.parse_expression()
+        if not (condition := self.parse_expression()):
+            raise SyntaxError('Expected condition in if statement')
         block = self.parse_block()
         return IfStatement(condition, block, position)
 
@@ -232,7 +233,8 @@ class Parser:
         position = self.token.position
         if not self.must_be(TokenType.WHILE):
             return None
-        condition = self.parse_expression()
+        if not (condition := self.parse_expression()):
+            raise SyntaxError('Expected condition in if statement')
         block = self.parse_block()
         return WhileStatement(condition, block, position)
 
