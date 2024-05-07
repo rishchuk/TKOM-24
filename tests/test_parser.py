@@ -3,6 +3,67 @@ from parser.parser import *
 
 
 class TestParser(unittest.TestCase):
+    def test_parse_variable_declaration(self):
+        code = """
+                value x = 10
+                """
+        reader = CharacterReader(StringIO(code))
+        lexer = Lexer(reader)
+        parser = Parser(lexer)
+        program = parser.parse_program()
+        self.assertEqual(len(program.functions), 1)
+        var = program.functions[0]
+        self.assertIsInstance(var, VariableDeclaration)
+        self.assertEqual(var.name, "x")
+
+    def test_parse_if_statement(self):
+        code = """
+                if x > 2 {
+                    x = x + 1
+                }
+                """
+        reader = CharacterReader(StringIO(code))
+        lexer = Lexer(reader)
+        parser = Parser(lexer)
+        program = parser.parse_program()
+        self.assertEqual(len(program.functions), 1)
+        if_stat = program.functions[0]
+        self.assertIsInstance(if_stat, IfStatement)
+        self.assertIsInstance(if_stat.block, Block)
+        self.assertEqual(len(if_stat.block.statements), 1)
+
+    def test_parse_while_statement(self):
+        code = """
+                while x < 2 {
+                    x = x + 1
+                }
+                """
+        reader = CharacterReader(StringIO(code))
+        lexer = Lexer(reader)
+        parser = Parser(lexer)
+        program = parser.parse_program()
+        self.assertEqual(len(program.functions), 1)
+        while_stat = program.functions[0]
+        self.assertIsInstance(while_stat, WhileStatement)
+        self.assertIsInstance(while_stat.block, Block)
+        self.assertEqual(len(while_stat.block.statements), 1)
+
+    def test_parse_foreach_statement(self):
+        code = """
+                foreach i in "world" {
+                    print(i)
+                }
+                """
+        reader = CharacterReader(StringIO(code))
+        lexer = Lexer(reader)
+        parser = Parser(lexer)
+        program = parser.parse_program()
+        self.assertEqual(len(program.functions), 1)
+        foreach_stat = program.functions[0]
+        self.assertIsInstance(foreach_stat, ForeachStatement)
+        self.assertIsInstance(foreach_stat.block, Block)
+        self.assertEqual(len(foreach_stat.block.statements), 1)
+
     def test_parse_function_definition(self):
         code = """
                 function add(a, b) {
@@ -200,6 +261,17 @@ class TestParser(unittest.TestCase):
         with self.assertRaises(SyntaxError) as context:
             parser_with_error.parse_program()
         self.assertIn("Expected 'in'", str(context.exception))
+
+    def test_syntax_error_expected_condition(self):
+        code = """
+        if {}
+        """
+        reader = CharacterReader(StringIO(code))
+        lexer = Lexer(reader)
+        parser_with_error = Parser(lexer)
+        with self.assertRaises(SyntaxError) as context:
+            parser_with_error.parse_program()
+        self.assertIn("Expected condition", str(context.exception))
 
     def test_syntax_error_expected_to_open_block(self):
         code = """
