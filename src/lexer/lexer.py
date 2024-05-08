@@ -36,7 +36,6 @@ class TokenType(Enum):
     AND_OPERATOR = auto()
     OR_OPERATOR = auto()
     COMMENT = auto()
-    UNDEFINED = auto()
     COMMA = auto()
     DOT = auto()
     NEG = auto()
@@ -123,6 +122,8 @@ class CharacterReader:
         else:
             self.position.column += 1
         self.current_char = self.source.read(1)
+        # if self.current_char == '\r':
+        #     pass
         return self.current_char if self.current_char else '\x03'
 
 
@@ -171,10 +172,11 @@ class Lexer:
             or self.try_build_one_or_two_char_operator('!=', TokenType.NEG, TokenType.NOT_EQUALS) \
             or self.try_build_one_or_two_char_operator('<=', TokenType.LESS, TokenType.LESS_THAN_OR_EQUAL) \
             or self.try_build_one_or_two_char_operator('>=', TokenType.GREATER, TokenType.GREATER_THAN_OR_EQUAL) \
-            or self.try_build_one_char_operator() \
-            or self.build_undefined()
-
-        return token
+            or self.try_build_one_char_operator()
+        if token:
+            return token
+        else:
+            raise SyntaxError('Unknown token')
 
     def try_build_logical_operator(self, value, token_type):
         if self.current_char != value[0]:
@@ -184,7 +186,7 @@ class Lexer:
         if self.current_char == value[1]:
             self.advance()
             return Token(token_type, self.start_position)
-        return None
+        raise SyntaxError('Unknown token')
 
     def try_build_one_char_operator(self):
         if self.current_char in OPERATORS:
@@ -236,7 +238,7 @@ class Lexer:
         self.advance()
 
         while self.current_char.isdecimal():
-            if (sys.maxsize - value) // 10 >= value:
+            if (sys.maxsize - int(self.current_char)) // 10 >= value:
                 value = value * 10 + int(self.current_char)
             else:
                 raise ValueError(f"Integer overflow at Line: {self.start_position.line}, "
@@ -269,17 +271,14 @@ class Lexer:
             self.advance()
 
             while self.current_char != '"':
-                if len(builder) >= self.STRING_MAX_LENGTH:
-                    raise ValueError(f"String length exceeds the maximum limit of {self.STRING_MAX_LENGTH} characters")
-                elif self.current_char == '\x03' or self.current_char == '\n':
+                if self.current_char == '\x03' or self.current_char == '\n':
                     raise SyntaxError(
                         f"Unterminated string literal at Line: {self.start_position.line}, "
                         f"Column: {self.start_position.column}")
-                elif self.current_char == '\\':
-                    self.advance()
-                    builder.append(self.handle_escaped_character())
-                else:
-                    builder.append(self.current_char)
+                elif len(builder) == self.STRING_MAX_LENGTH:
+                    raise ValueError(f"String length exceeds the maximum limit of {self.STRING_MAX_LENGTH} characters")
+
+                builder.append(self.handle_escaped_character())
                 self.advance()
 
             self.advance()
@@ -288,6 +287,9 @@ class Lexer:
         return None
 
     def handle_escaped_character(self):
+        if self.current_char != '\\':
+            return self.current_char
+        self.advance()
         if self.current_char == 'n':
             return '\n'
         elif self.current_char == 't':
@@ -355,7 +357,7 @@ value c = 8
 recursive_add(c)
 """
 
-    file_name = "..\input.xd"
+    file_name = "../input.xd"
     # lexer = Lexer(CharacterReader(StringIO(code)))
     # token = lexer.get_next_token()
     # while token.type != TokenType.ETX:

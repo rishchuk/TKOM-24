@@ -9,18 +9,15 @@ value world = "World!"
 print(hello + world)
 print(hello * 2)
 
-# if statement
 if z >= 10 && hello == "Hello, " {
     print("z is greater than 10 and hello is Hello, ")
 }
 
-# while loop
 while x > 0 {
-    print x
+    print(x)
     x = x - 1
 }
 
-# function definition and call
 function add(x, y) {
     value z = x + y
     print(z)
@@ -30,10 +27,9 @@ value a = 10
 value b = 5
 add(a, b)
 
-# recursive function call
 function recursive_add(x) {
     if x == 5 {
-        return
+        return 0
     }
     if x >= 5 {
         x = x - 1
@@ -42,7 +38,7 @@ function recursive_add(x) {
 }
 
 value a = "hello"
-print(a.length)         # 5
+
 
 value word = input()
 
