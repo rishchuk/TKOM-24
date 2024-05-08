@@ -1,6 +1,13 @@
 from lexer.lexer import *
 from enum import Enum, auto
 
+from errors.parser_errors import ExpectedFunctionNameError, ParserError, ExpectedLeftParentAfterFun, \
+    ExpectedRightParentAfterFun, \
+    ExpectedBlockError, ExpectedParameterAfterCommaError, ExpectedRightBraceError, ExpectedLoopVariableError, \
+    ExpectedExpressionError, ExpectedInError, ExpectedConditionError, ExpectedVariableNameError, \
+    ExpectedAssignmentOrFunctionCall, ExpectedRightParentAfterFunCall, ExpectedArgumentAfterCommaError, \
+    ExpectedRightParentAfterExpression, ExpectedIdentifierAfterDotError, UnexpectedTokenError
+
 
 class Operators(Enum):
     OR_OPERATOR = auto()
@@ -164,9 +171,9 @@ class Parser:
         self.advance()
         return value
 
-    def must_be_(self, expected_type, error_message):
+    def must_be_(self, expected_type, error):
         if self.token.type != expected_type:
-            raise SyntaxError(error_message)
+            raise error
         value = self.token
         self.advance()
         return value
@@ -175,10 +182,11 @@ class Parser:
         statements = []
         while statement := self.parse_statement():
             statements.append(statement)
-        # if not ETX raise
+
+        self.must_be_(TokenType.ETX, UnexpectedTokenError(self.token.position))
         return Program(statements)
 
-    def parse_statements(self):  # block_statement
+    def parse_block_statement(self):
         # var_declaration | if | while | foreach |
         # identifier_or_call, [ "=" , expression ] | return ;
         return (
@@ -203,13 +211,14 @@ class Parser:
         if not self.maybe(TokenType.FUNCTION):
             return None
 
-        token = self.must_be_(TokenType.IDENTIFIER, f"Expected function name")
-        self.must_be_(TokenType.LEFT_PARENT, f"Expected '(' after function name")
+        token = self.must_be_(TokenType.IDENTIFIER, ExpectedFunctionNameError(self.token.position))
+        self.must_be_(TokenType.LEFT_PARENT, ExpectedLeftParentAfterFun(self.token.position))
         parameters = self.parse_parameters()
-        self.must_be_(TokenType.RIGHT_PARENT, f"Expected ')' after function parameters")
+        self.must_be_(TokenType.RIGHT_PARENT, ExpectedRightParentAfterFun(self.token.position))
+        position = self.token.position
         if block := self.parse_block():
             return FunctionDefinition(token.value, parameters, block, position)
-        raise SyntaxError('Expected block')
+        raise ExpectedBlockError(position)
 
     def parse_parameters(self):
         # parameters = [ identifier , { "," , identifier } ]
@@ -220,7 +229,7 @@ class Parser:
         params.append(param)
         while self.maybe(TokenType.COMMA):
             if not (param := self.parse_parameter()):
-                raise SyntaxError(f"Expected parameter after ','")
+                raise ExpectedParameterAfterCommaError(self.token.position)
             params.append(param)
         return params
 
@@ -236,9 +245,9 @@ class Parser:
         if not self.maybe(TokenType.LEFT_BRACE):
             return None
         statements = []
-        while statement := self.parse_statements():
+        while statement := self.parse_block_statement():
             statements.append(statement)
-        self.must_be_(TokenType.RIGHT_BRACE, "Expected '}' to close block")
+        self.must_be_(TokenType.RIGHT_BRACE, ExpectedRightBraceError(self.token.position))
         return Block(statements)
 
     def parse_foreach_statement(self):
@@ -246,14 +255,14 @@ class Parser:
         position = self.token.position
         if not self.maybe(TokenType.FOREACH):
             return None
-        loop_variable = self.must_be_(TokenType.IDENTIFIER, f"Expected loop variable")
-        self.must_be_(TokenType.IN, f"Expected 'in'")
+        loop_variable = self.must_be_(TokenType.IDENTIFIER, ExpectedLoopVariableError(self.token.position))
+        self.must_be_(TokenType.IN, ExpectedInError(self.token.position))
         if not (iterable_expr := self.parse_expression()):  # ??? expression
-            raise SyntaxError('Must be an expression')
+            raise ExpectedExpressionError(self.token.position)
 
         if block := self.parse_block():
             return ForeachStatement(loop_variable, iterable_expr, block, position)
-        raise SyntaxError('Expected block')
+        raise ExpectedBlockError(position)
 
     def parse_return_statement(self):
         # return = "return", [ expression ];
@@ -269,10 +278,10 @@ class Parser:
         if not self.maybe(TokenType.IF):
             return None
         if not (condition := self.parse_expression()):
-            raise SyntaxError('Expected condition in if statement')
+            raise ExpectedConditionError(self.token.position)
         if block := self.parse_block():
             return IfStatement(condition, block, position)
-        raise SyntaxError('Expected block in if while statement')
+        raise ExpectedBlockError(position)
 
     def parse_while_statement(self):
         # while = "while" , expression ,  block ;
@@ -280,10 +289,10 @@ class Parser:
         if not self.maybe(TokenType.WHILE):
             return None
         if not (condition := self.parse_expression()):
-            raise SyntaxError('Expected condition in while statement')
+            raise ExpectedConditionError(self.token.position)
         if block := self.parse_block():
             return WhileStatement(condition, block, position)
-        raise SyntaxError(f'Expected block in while statement at {self.token.position}')
+        raise ExpectedBlockError(position)
 
     def parse_variable_declaration(self):
         # var_declaration = "value" , identifier , [ "=" , expression ] ;
@@ -292,7 +301,7 @@ class Parser:
         if not self.maybe(TokenType.VALUE):
             return None
 
-        token = self.must_be_(TokenType.IDENTIFIER, f"Expected variable name at {self.token.position}")
+        token = self.must_be_(TokenType.IDENTIFIER, ExpectedVariableNameError(self.token.position))
         if self.maybe(TokenType.EQUAL):
             if not (value_expr := self.parse_expression()):
 
@@ -310,15 +319,15 @@ class Parser:
             return fun_call
         if assignment := self.parse_assignment(token.value):
             return assignment
-        else:
-            raise SyntaxError(f"Expected '(' or '=' after identifier at {self.token.position}")
+
+        raise ExpectedAssignmentOrFunctionCall(self.token.position)
 
     def parse_function_call(self, name, position, parent):
         # function_call = identifier , "(" , args , ")"
         if not self.maybe(TokenType.LEFT_PARENT):
             return None
         args = self.parse_arguments()
-        self.must_be_(TokenType.RIGHT_PARENT, f"Expected ')' after function arguments at {self.token.position}")
+        self.must_be_(TokenType.RIGHT_PARENT, ExpectedRightParentAfterFunCall(self.token.position))
 
         return FunctionCall(name, args, position, parent)
 
@@ -331,7 +340,7 @@ class Parser:
         args.append(arg)
         while self.maybe(TokenType.COMMA):
             if not (arg := self.parse_expression()):
-                raise SyntaxError(f"Expected argument after ',' at {self.token.position}")
+                raise ExpectedArgumentAfterCommaError(self.token.position)
             args.append(arg)
         return args
 
@@ -342,7 +351,7 @@ class Parser:
             return None
         if value_expr := self.parse_expression():
             return Assignment(expression_identifier, value_expr, position)
-        raise SyntaxError(f'Expected expression after "=" in {self.token.position}')
+        raise ExpectedExpressionError(self.token.position)
 
     def parse_expression(self):
         return self.parse_logical_or()
@@ -357,7 +366,7 @@ class Parser:
             # operator = self.token.value
 
             if not (right_expr := self.parse_logical_and()):
-                raise SyntaxError(f"Expected expression after '||' at {self.token.position}")
+                raise ExpectedExpressionError(self.token.position)
 
             left_expr = BinaryOperation(OPERATORS[operator.type], left_expr, right_expr, position)  # enumerator zamiast operator
 
@@ -370,7 +379,7 @@ class Parser:
         position = self.token.position
         while operator := self.maybe(TokenType.AND_OPERATOR):
             if not (right_expr := self.parse_equality()):
-                raise SyntaxError(f"Expected expression after '&&' at {self.token.position}")
+                raise ExpectedExpressionError(self.token.position)
             left_expr = BinaryOperation(OPERATORS[operator.type], left_expr, right_expr, position)
 
         return left_expr
@@ -382,7 +391,7 @@ class Parser:
         if operator := self.maybe(TokenType.EQUALS) or self.maybe(TokenType.NOT_EQUALS):
 
             if not (right_expr := self.parse_relational()):
-                raise SyntaxError(f"Missing second expression at {self.token.position}")
+                raise ExpectedExpressionError(self.token.position)
             left_expr = BinaryOperation(OPERATORS[operator.type], left_expr, right_expr, position)
 
         return left_expr
@@ -397,7 +406,7 @@ class Parser:
                           self.maybe(TokenType.GREATER_THAN_OR_EQUAL):
 
             if not (right_expr := self.parse_additive()):
-                raise SyntaxError(f"Missing second expression at {self.token.position}")
+                raise ExpectedExpressionError(self.token.position)
             left_expr = BinaryOperation(OPERATORS[operator.type], left_expr, right_expr, position)
 
         return left_expr
@@ -411,7 +420,7 @@ class Parser:
                           self.maybe(TokenType.MINUS_OPERATOR):
 
             if not (right_expr := self.parse_multiplicative()):
-                raise SyntaxError(f"Missing second expression {self.token.position}")
+                raise ExpectedExpressionError(self.token.position)
             left_expr = BinaryOperation(OPERATORS[operator.type], left_expr, right_expr, position)
 
         return left_expr
@@ -424,7 +433,7 @@ class Parser:
         while operator := self.maybe(TokenType.MULT_OPERATOR) or \
                           self.maybe(TokenType.DIV_OPERATOR):
             if not (right_expr := self.parse_unary()):
-                raise SyntaxError(f"Missing second expression at {self.token.position}")
+                raise ExpectedExpressionError(self.token.position)
             left_expr = BinaryOperation(OPERATORS[operator.type], left_expr, right_expr, position)
 
         return left_expr
@@ -436,20 +445,20 @@ class Parser:
                        self.maybe(TokenType.NEG):
             right = self.parse_primary()
             if not right:
-                raise SyntaxError(f"Missing unary expression at {self.token.position}")
+                raise ExpectedExpressionError(self.token.position)
 
             return UnaryOperation(OPERATORS[operator.type], right, position)
         return self.parse_primary()
 
     def parse_primary(self):
         return (
-                self.parse_identifier_or_fun_call() or self.parse_literal() or self.parse_parenthesized_expression()
+            self.parse_identifier_or_fun_call() or self.parse_literal() or self.parse_parenthesized_expression()
         )
 
     def parse_dot_chain(self, parent):
         position = self.token.position
         while self.maybe(TokenType.DOT):
-            token = self.must_be_(TokenType.IDENTIFIER, f'Expected identifier after "." at {self.token.position}')
+            token = self.must_be_(TokenType.IDENTIFIER, ExpectedIdentifierAfterDotError(self.token.position))
             if not (item := self.parse_function_call(token.value, position, parent)):
                 item = Identifier(token.value, position, parent)
             parent = item
@@ -494,8 +503,8 @@ class Parser:
         if not self.maybe(TokenType.LEFT_PARENT):
             return None
         if not (expression := self.parse_expression()):
-            raise SyntaxError(f'Expected expression {self.token.position}')
-        self.must_be_(TokenType.RIGHT_PARENT, f"Expected ')' after expression {self.token.position}")
+            raise ExpectedExpressionError(self.token.position)
+        self.must_be_(TokenType.RIGHT_PARENT, ExpectedRightParentAfterExpression(self.token.position))
         return expression
 
     def advance(self):
@@ -504,8 +513,6 @@ class Parser:
 
 if __name__ == "__main__":
     code = """ 
-    value x = d.val.len()
-    
     function add(a, b) {
         return 42
     }
@@ -538,7 +545,6 @@ if __name__ == "__main__":
 
         print(program)
 
-    except SyntaxError as e:
-        print(f"Syntax Error: {e}")
-    except ValueError as e:
-        print(f"Value Error: {e}")
+    except ParserError as e:
+        print(e)
+
