@@ -123,38 +123,31 @@ class UnaryOperation(Node):
         self.right = right
 
 
-# class Literal(Node):
-#     def __init__(self, value, data_type, position):
-#         super().__init__(position)
-#         self.value = value
-#         self.data_type = data_type
-
-class IntLiteral(Node):
+class Literal(Node):
     def __init__(self, value, data_type, position):
         super().__init__(position)
         self.value = value
         self.data_type = data_type
 
 
-class FloatLiteral(Node):
+class IntLiteral(Literal):
     def __init__(self, value, data_type, position):
-        super().__init__(position)
-        self.value = value
-        self.data_type = data_type
+        super().__init__(value, data_type, position)
 
 
-class BoolLiteral(Node):
+class FloatLiteral(Literal):
     def __init__(self, value, data_type, position):
-        super().__init__(position)
-        self.value = value
-        self.data_type = data_type
+        super().__init__(value, data_type, position)
 
 
-class StringLiteral(Node):
+class BoolLiteral(Literal):
     def __init__(self, value, data_type, position):
-        super().__init__(position)
-        self.value = value
-        self.data_type = data_type
+        super().__init__(value, data_type, position)
+
+
+class StringLiteral(Literal):
+    def __init__(self, value, data_type, position):
+        super().__init__(value, data_type, position)
 
 
 class ReturnStatement(Node):
