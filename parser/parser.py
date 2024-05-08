@@ -1,12 +1,11 @@
-from lexer.lexer import *
-from enum import Enum, auto
-
+from lexer.lexer import Lexer, CharacterReader, TokenType, StringIO
 from errors.parser_errors import ExpectedFunctionNameError, ParserError, ExpectedLeftParentAfterFun, \
-    ExpectedRightParentAfterFun, \
-    ExpectedBlockError, ExpectedParameterAfterCommaError, ExpectedRightBraceError, ExpectedLoopVariableError, \
-    ExpectedExpressionError, ExpectedInError, ExpectedConditionError, ExpectedVariableNameError, \
-    ExpectedAssignmentOrFunctionCall, ExpectedRightParentAfterFunCall, ExpectedArgumentAfterCommaError, \
-    ExpectedRightParentAfterExpression, ExpectedIdentifierAfterDotError, UnexpectedTokenError
+    ExpectedRightParentAfterFun, ExpectedBlockError, ExpectedParameterAfterCommaError, ExpectedRightBraceError, \
+    ExpectedLoopVariableError, ExpectedExpressionError, ExpectedInError, ExpectedConditionError, \
+    ExpectedVariableNameError, ExpectedAssignmentOrFunctionCall, ExpectedRightParentAfterFunCall, \
+    ExpectedArgumentAfterCommaError, ExpectedRightParentAfterExpression, ExpectedIdentifierAfterDotError, \
+    UnexpectedTokenError
+from enum import Enum, auto
 
 
 class Operators(Enum):
@@ -124,7 +123,34 @@ class UnaryOperation(Node):
         self.right = right
 
 
-class Literal(Node):
+# class Literal(Node):
+#     def __init__(self, value, data_type, position):
+#         super().__init__(position)
+#         self.value = value
+#         self.data_type = data_type
+
+class IntLiteral(Node):
+    def __init__(self, value, data_type, position):
+        super().__init__(position)
+        self.value = value
+        self.data_type = data_type
+
+
+class FloatLiteral(Node):
+    def __init__(self, value, data_type, position):
+        super().__init__(position)
+        self.value = value
+        self.data_type = data_type
+
+
+class BoolLiteral(Node):
+    def __init__(self, value, data_type, position):
+        super().__init__(position)
+        self.value = value
+        self.data_type = data_type
+
+
+class StringLiteral(Node):
     def __init__(self, value, data_type, position):
         super().__init__(position)
         self.value = value
@@ -257,11 +283,11 @@ class Parser:
             return None
         loop_variable = self.must_be_(TokenType.IDENTIFIER, ExpectedLoopVariableError(self.token.position))
         self.must_be_(TokenType.IN, ExpectedInError(self.token.position))
-        if not (iterable_expr := self.parse_expression()):  # ??? expression
+        if not (iterable_expr := self.parse_expression()):
             raise ExpectedExpressionError(self.token.position)
 
         if block := self.parse_block():
-            return ForeachStatement(loop_variable, iterable_expr, block, position)
+            return ForeachStatement(loop_variable.value, iterable_expr, block, position)
         raise ExpectedBlockError(position)
 
     def parse_return_statement(self):
@@ -304,7 +330,6 @@ class Parser:
         token = self.must_be_(TokenType.IDENTIFIER, ExpectedVariableNameError(self.token.position))
         if self.maybe(TokenType.EQUAL):
             if not (value_expr := self.parse_expression()):
-
                 raise SyntaxError(f'Expected expression in variable at {self.token.position}')
         else:
             value_expr = None
@@ -368,7 +393,8 @@ class Parser:
             if not (right_expr := self.parse_logical_and()):
                 raise ExpectedExpressionError(self.token.position)
 
-            left_expr = BinaryOperation(OPERATORS[operator.type], left_expr, right_expr, position)  # enumerator zamiast operator
+            left_expr = BinaryOperation(OPERATORS[operator.type], left_expr, right_expr,
+                                        position)  # enumerator zamiast operator
 
         return left_expr
 
@@ -478,6 +504,7 @@ class Parser:
         #         item = Identifier(token.value, position, item)
 
         return self.parse_dot_chain(item)
+
     # a.b.c
     # c -> b -> a
 
@@ -486,15 +513,15 @@ class Parser:
         position = self.token.position
 
         if self.maybe(TokenType.INT_CONST):
-            return Literal(value, TokenType.INT_CONST, position)
+            return IntLiteral(value, TokenType.INT_CONST, position)
         if self.maybe(TokenType.FLOAT_CONST):
-            return Literal(value, TokenType.FLOAT_CONST, position)
+            return FloatLiteral(value, TokenType.FLOAT_CONST, position)
         if self.maybe(TokenType.TRUE_CONST):
-            return Literal(value, TokenType.TRUE_CONST, position)
+            return BoolLiteral(value, TokenType.TRUE_CONST, position)
         if self.maybe(TokenType.FALSE_CONST):
-            return Literal(value, TokenType.FALSE_CONST, position)
+            return BoolLiteral(value, TokenType.FALSE_CONST, position)
         if self.maybe(TokenType.STRING):
-            literal = Literal(value, TokenType.STRING, position)
+            literal = StringLiteral(value, TokenType.STRING, position)
             return self.parse_dot_chain(literal)
         return None
 
@@ -547,4 +574,3 @@ if __name__ == "__main__":
 
     except ParserError as e:
         print(e)
-
