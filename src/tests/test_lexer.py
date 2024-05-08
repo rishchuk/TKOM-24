@@ -1,5 +1,5 @@
 import io
-from lexer.lexer import Lexer, CharacterReader, TokenType
+from src.lexer.lexer import Lexer, CharacterReader, TokenType
 import unittest
 from sys import maxsize
 
@@ -17,7 +17,7 @@ class TestLexer(unittest.TestCase):
             lexer.get_next_token()
 
     def test_number_max_value(self):
-        code = io.StringIO(str(self.number_max_value))
+        code = io.StringIO(str(self.number_max_value + 1))
         lexer = Lexer(CharacterReader(code))
         with self.assertRaises(ValueError):
             lexer.get_next_token()
@@ -92,7 +92,7 @@ class TestLexer(unittest.TestCase):
         code = io.StringIO("""
         if while foreach in value return function identifier 
         10 10.5 true false "string" = + - * / < > () {} == != <= >= && || #
-        $ , . !
+        , . !
         """
                            )
         lexer = Lexer(CharacterReader(code))
@@ -175,11 +175,8 @@ class TestLexer(unittest.TestCase):
     def test_build_undefined_token(self):
         code = io.StringIO('$va7_ue x')
         lexer = Lexer(CharacterReader(code))
-        token = lexer.get_next_token()
-        self.assertEqual(token.type, TokenType.UNDEFINED)
-        self.assertEqual(token.value, '$va7_ue')
-        self.assertEqual(token.position.line, 1)
-        self.assertEqual(token.position.column, 1)
+        with self.assertRaises(SyntaxError):
+            lexer.get_next_token()
 
     def test_try_build_keyword_or_identifier(self):
         source = io.StringIO("number")

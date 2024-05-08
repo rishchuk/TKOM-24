@@ -36,7 +36,6 @@ class TokenType(Enum):
     AND_OPERATOR = auto()
     OR_OPERATOR = auto()
     COMMENT = auto()
-    UNDEFINED = auto()
     COMMA = auto()
     DOT = auto()
     NEG = auto()
@@ -358,7 +357,7 @@ value c = 8
 recursive_add(c)
 """
 
-    file_name = "..\input.xd"
+    file_name = "../input.xd"
     # lexer = Lexer(CharacterReader(StringIO(code)))
     # token = lexer.get_next_token()
     # while token.type != TokenType.ETX:

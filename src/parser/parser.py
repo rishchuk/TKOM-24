@@ -1,11 +1,12 @@
-from lexer.lexer import Lexer, CharacterReader, TokenType, StringIO
-from errors.parser_errors import ExpectedFunctionNameError, ParserError, ExpectedLeftParentAfterFun, \
+from src.lexer.lexer import Lexer, CharacterReader, TokenType, StringIO
+from src.errors.parser_errors import ExpectedFunctionNameError, ParserError, ExpectedLeftParentAfterFun, \
     ExpectedRightParentAfterFun, ExpectedBlockError, ExpectedParameterAfterCommaError, ExpectedRightBraceError, \
     ExpectedLoopVariableError, ExpectedExpressionError, ExpectedInError, ExpectedConditionError, \
     ExpectedVariableNameError, ExpectedAssignmentOrFunctionCall, ExpectedRightParentAfterFunCall, \
     ExpectedArgumentAfterCommaError, ExpectedRightParentAfterExpression, ExpectedIdentifierAfterDotError, \
     UnexpectedTokenError
 from enum import Enum, auto
+from src.parser.models import *
 
 
 class Operators(Enum):
@@ -39,143 +40,6 @@ OPERATORS = {
     TokenType.DIV_OPERATOR: Operators.DIV_OPERATOR,
     TokenType.NEG: Operators.NEG,
 }
-
-
-class Node:
-    def __init__(self, position):
-        self.position = position
-
-    def __str__(self, level=0):
-        indent = "  " * level
-        result = f"{indent}{self.__class__.__name__}:\n"
-        for key, value in vars(self).items():
-            if isinstance(value, Node):
-                result += value.__str__(level + 1)
-            else:
-                result += f"{indent}  {key}: {value}\n"
-        return result
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class Program(Node):
-    def __init__(self, statemens):
-        super().__init__(None)
-        self.statemens = statemens
-
-
-class Identifier(Node):
-    def __init__(self, name, position, parent):
-        super().__init__(position)
-        self.name = name
-        self.parent = parent
-
-
-class FunctionDefinition(Node):
-    def __init__(self, name, parameters, block, position):
-        super().__init__(position)
-        self.name = name
-        self.parameters = parameters
-        self.block = block
-
-
-class Block(Node):
-    def __init__(self, statements):
-        super().__init__(None)
-        self.statements = statements
-
-
-class VariableDeclaration(Node):
-    def __init__(self, name, value_expr, position):
-        super().__init__(position)
-        self.name = name
-        self.value_expr = value_expr
-
-
-class FunctionCall(Node):
-    def __init__(self, name, args, position, parent):
-        super().__init__(position)
-        self.name = name
-        self.args = args
-        self.parent = parent
-
-
-class Assignment(Node):
-    def __init__(self, name, value_expr, position):
-        super().__init__(position)
-        self.name = name
-        self.value_expr = value_expr
-
-
-class BinaryOperation(Node):
-    def __init__(self, operator, left, right, position):
-        super().__init__(position)
-        self.operator = operator
-        self.left = left
-        self.right = right
-
-
-class UnaryOperation(Node):
-    def __init__(self, operator, right, position):
-        super().__init__(position)
-        self.operator = operator
-        self.right = right
-
-
-class Literal(Node):
-    def __init__(self, value, data_type, position):
-        super().__init__(position)
-        self.value = value
-        self.data_type = data_type
-
-
-class IntLiteral(Literal):
-    def __init__(self, value, data_type, position):
-        super().__init__(value, data_type, position)
-
-
-class FloatLiteral(Literal):
-    def __init__(self, value, data_type, position):
-        super().__init__(value, data_type, position)
-
-
-class BoolLiteral(Literal):
-    def __init__(self, value, data_type, position):
-        super().__init__(value, data_type, position)
-
-
-class StringLiteral(Literal):
-    def __init__(self, value, data_type, position):
-        super().__init__(value, data_type, position)
-
-
-class ReturnStatement(Node):
-    def __init__(self, value_expr, position):
-        super().__init__(position)
-        self.value_expr = value_expr
-
-
-class IfStatement(Node):
-    def __init__(self, condition, block, position):
-        super().__init__(position)
-        self.condition = condition
-        self.block = block
-
-
-class WhileStatement(Node):
-    def __init__(self, condition, block, position):
-        super().__init__(position)
-        self.condition = condition
-        self.block = block
-
-
-class ForeachStatement(Node):
-    def __init__(self, variable, iterable, block, position):
-        super().__init__(position)
-        self.variable = variable
-        self.iterable = iterable
-        self.block = block
 
 
 class Parser:
@@ -506,15 +370,15 @@ class Parser:
         position = self.token.position
 
         if self.maybe(TokenType.INT_CONST):
-            return IntLiteral(value, TokenType.INT_CONST, position)
+            return IntLiteral(value, position)
         if self.maybe(TokenType.FLOAT_CONST):
-            return FloatLiteral(value, TokenType.FLOAT_CONST, position)
+            return FloatLiteral(value, position)
         if self.maybe(TokenType.TRUE_CONST):
-            return BoolLiteral(value, TokenType.TRUE_CONST, position)
+            return BoolLiteral(value, position)
         if self.maybe(TokenType.FALSE_CONST):
-            return BoolLiteral(value, TokenType.FALSE_CONST, position)
+            return BoolLiteral(value, position)
         if self.maybe(TokenType.STRING):
-            literal = StringLiteral(value, TokenType.STRING, position)
+            literal = StringLiteral(value, position)
             return self.parse_dot_chain(literal)
         return None
 
@@ -554,7 +418,7 @@ if __name__ == "__main__":
 
     """
 
-    file_name = "..\input.xd"
+    file_name = "../input.xd"
 
     try:
         # with open(file_name, 'r') as file:

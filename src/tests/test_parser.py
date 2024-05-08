@@ -1,9 +1,8 @@
 import unittest
-from parser.parser import Parser, Program, VariableDeclaration, \
-    IfStatement, Block, WhileStatement, ForeachStatement, FunctionDefinition, \
-    ReturnStatement, Assignment
-from lexer.lexer import CharacterReader, StringIO, Lexer
-from errors.parser_errors import *
+from src.parser.parser import Parser
+from src.lexer.lexer import CharacterReader, StringIO, Lexer
+from src.errors.parser_errors import *
+from src.parser.models import *
 
 
 class TestParser(unittest.TestCase):
