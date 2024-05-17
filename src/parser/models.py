@@ -17,9 +17,9 @@ class Node:
 
 
 class Program(Node):
-    def __init__(self, statemens):
+    def __init__(self, statements):
         super().__init__(None)
-        self.statemens = statemens
+        self.statements = statements
 
 
 class Identifier(Node):

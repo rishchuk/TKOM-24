@@ -365,7 +365,7 @@ class Parser:
     # a.b.c
     # c -> b -> a
 
-    def parse_literal(self):  # int_literal, bool_literal ...
+    def parse_literal(self):
         value = self.token.value
         position = self.token.position
 
