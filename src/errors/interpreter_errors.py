@@ -25,3 +25,23 @@ class UndefinedFunctionError(InterpreterError):
 class UndefinedVarError(InterpreterError):
     def __init__(self, name):
         super().__init__(f"Variable '{name}' not defined")
+        
+
+class DivisionByZeroError(InterpreterError):
+    def __init__(self):
+        super().__init__(f"Division by zero is not allowed")
+
+
+class TypeBinaryError(InterpreterError):
+    def __init__(self):
+        super().__init__(f"Error between types")
+
+
+class TypeUnaryError(InterpreterError):
+    def __init__(self):
+        super().__init__(f"Error type")
+
+
+class UnexpectedTypeError(InterpreterError):
+    def __init__(self, name):
+        super().__init__(f"Invalid argument type for {name}")

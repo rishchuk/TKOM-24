@@ -136,26 +136,21 @@ foreach char in word {
 }
 ```
 
-#### 9. Przykładowe wejście
-```
-value age = input("Enter your age: ")
-```
-
-#### 10. Funkcje wbudowane
+#### 9. Funkcje wbudowane
 ```
 5 + int(2.1)            # 7
 ```
 
-#### 11. String z atrybutem
+#### 10. String z atrybutem
 ```
 print(!'shoes'.length)  # false
-print(-'shoes'.length)  # -5
+print('shoes'.length)   # 5
 
 value a = "hello"
 print(a.length)         # 5
 ```
 
-#### 12. String z metodami
+#### 11. String z metodami
 ```
 
 print("test".char(0))

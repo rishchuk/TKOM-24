@@ -1,6 +1,7 @@
 from io import StringIO
 
-from src.errors.interpreter_errors import InterpreterError
+from src.errors.interpreter_errors import InterpreterError, DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
+    UnexpectedTypeError
 from src.errors.parser_errors import ParserError
 from src.interpreter.environment import Environment
 from src.interpreter.visitor import Visitor
@@ -17,10 +18,40 @@ class Interpreter(Visitor):
 
     def setup_builtins(self):
         self.env.set_function('print', self.builtin_print)
+        self.env.set_function('int', self.builtin_int)
+        self.env.set_function('float', self.builtin_float)
+        self.env.set_function('bool', self.builtin_bool)
+        self.env.set_function('str', self.builtin_str)
 
     @staticmethod
     def builtin_print(*args):
         print(*args)
+
+    @staticmethod
+    def builtin_int(value):
+        if isinstance(value, (int, float, str)):
+            try:
+                return int(value)
+            except ValueError:
+                raise UnexpectedTypeError("int()")
+        raise UnexpectedTypeError("int()")
+
+    @staticmethod
+    def builtin_float(value):
+        if isinstance(value, (int, float, str)):
+            try:
+                return float(value)
+            except ValueError:
+                raise UnexpectedTypeError("float()")
+        raise UnexpectedTypeError("float()")
+
+    @staticmethod
+    def builtin_bool(value):
+        return bool(value)
+
+    @staticmethod
+    def builtin_str(value):
+        return str(value)
 
     def interpret(self):
         return self.visit(self.program)
@@ -59,7 +90,7 @@ class Interpreter(Visitor):
         interpreter.env = context
         result = interpreter.interpret()
         return interpreter.return_value
-        #return interpreter.interpret()
+        # return interpreter.interpret()
 
     def visit_IfStatement(self, statement):
         condition = self.visit(statement.condition)
@@ -78,35 +109,118 @@ class Interpreter(Visitor):
 
     def visit_ReturnStatement(self, statement):
         self.return_value = self.visit(statement.value_expr)
-        #return self.visit(node.value_expr)
+        # return self.visit(statement.value_expr)
 
     def visit_BinaryOperation(self, expr):
-        left = self.visit(expr.left)
-        right = self.visit(expr.right)
-        if expr.operator == Operators.ADD_OPERATOR:
+        match expr.operator:
+            case Operators.ADD_OPERATOR:
+                return self.binary_plus(expr.left, expr.right)
+            case Operators.MINUS_OPERATOR:
+                return self.binary_minus(expr.left, expr.right)
+            case Operators.MULT_OPERATOR:
+                return self.binary_mult(expr.left, expr.right)
+            case Operators.DIV_OPERATOR:
+                return self.binary_div(expr.left, expr.right)
+            case (Operators.EQUALS | Operators.NOT_EQUALS | Operators.LESS
+                  | Operators.GREATER | Operators.LESS_THAN_OR_EQUAL
+                  | Operators.GREATER_THAN_OR_EQUAL):
+                return self.comparison(expr.operator, expr.left, expr.right)
+            case Operators.AND_OPERATOR:
+                return self.logical_and(expr.left, expr.right)
+            case Operators.OR_OPERATOR:
+                return self.logical_or(expr.left, expr.right)
+
+    def binary_plus(self, left_expr, right_expr):
+        left = self.visit(left_expr)
+        right = self.visit(right_expr)
+
+        if isinstance(left, str) or isinstance(right, str):
+            return str(left) + str(right)
+        else:
             return left + right
-        elif expr.operator == Operators.MINUS_OPERATOR:
-            return left - right
-        elif expr.operator == Operators.MULT_OPERATOR:
+
+    def binary_minus(self, left_expr, right_expr):
+        left = self.visit(left_expr)
+        right = self.visit(right_expr)
+
+        if isinstance(left, str) or isinstance(right, str):
+            raise TypeBinaryError()
+
+        return left - right
+
+    def binary_mult(self, left_expr, right_expr):
+        left = self.visit(left_expr)
+        right = self.visit(right_expr)
+        if isinstance(left, str) and isinstance(right, int):
             return left * right
-        elif expr.operator == Operators.DIV_OPERATOR:
-            return left / right
-        elif expr.operator == Operators.EQUALS:
-            return left == right
-        elif expr.operator == Operators.NOT_EQUALS:
-            return left != right
-        elif expr.operator == Operators.LESS:
-            return left < right
-        elif expr.operator == Operators.GREATER:
-            return left > right
-        elif expr.operator == Operators.LESS_THAN_OR_EQUAL:
-            return left <= right
-        elif expr.operator == Operators.GREATER_THAN_OR_EQUAL:
-            return left >= right
-        elif expr.operator == Operators.AND_OPERATOR:
-            return left and right
-        elif expr.operator == Operators.OR_OPERATOR:
-            return left or right
+        if isinstance(right, str) and isinstance(left, int):
+            return right * left
+        if isinstance(left, str) or isinstance(right, str):
+            raise TypeBinaryError()
+        return left * right
+
+    def binary_div(self, left_expr, right_expr):
+        left = self.visit(left_expr)
+        right = self.visit(right_expr)
+
+        if right == 0:
+            raise DivisionByZeroError()
+        if isinstance(left, str) or isinstance(right, str):
+            raise TypeBinaryError()
+
+        return left / right
+
+    def comparison(self, operator, left_expr, right_expr):
+        left = self.visit(left_expr)
+        right = self.visit(right_expr)
+
+        if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+            pass
+        elif isinstance(left, str) and isinstance(right, str):
+            if operator == Operators.EQUALS:
+                return left == right
+            elif operator == Operators.NOT_EQUALS:
+                return left != right
+            raise TypeBinaryError()
+        else:
+            raise TypeBinaryError()
+
+        match operator:
+            case Operators.EQUALS:
+                return left == right
+            case Operators.NOT_EQUALS:
+                return left != right
+            case Operators.LESS:
+                return left < right
+            case Operators.GREATER:
+                return left > right
+            case Operators.LESS_THAN_OR_EQUAL:
+                return left <= right
+            case Operators.GREATER_THAN_OR_EQUAL:
+                return left >= right
+
+    def visit_UnaryOperation(self, expr):
+        right = self.visit(expr.right)
+
+        match expr.operator:
+            case Operators.NEG:
+                return not right
+            case Operators.MINUS_OPERATOR:
+                if isinstance(right, (int, float)):
+                    return -right
+                raise TypeUnaryError()
+
+    def logical_and(self, left_expr, right_expr):
+        left = self.visit(left_expr)
+        right = self.visit(right_expr)
+
+        return left and right
+
+    def logical_or(self, left_expr, right_expr):
+        left = self.visit(left_expr)
+        right = self.visit(right_expr)
+
+        return left or right
 
     def visit_Identifier(self, identifier):
         return self.env.get_variable(identifier.name)
