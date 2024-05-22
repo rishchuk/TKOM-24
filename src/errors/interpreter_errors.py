@@ -45,3 +45,13 @@ class TypeUnaryError(InterpreterError):
 class UnexpectedTypeError(InterpreterError):
     def __init__(self, name):
         super().__init__(f"Invalid argument type for {name}")
+
+
+class UnexpectedMethodError(InterpreterError):
+    def __init__(self, name):
+        super().__init__(f"Invalid method {name}() on str")
+
+
+class UnexpectedAttributeError(InterpreterError):
+    def __init__(self, name):
+        super().__init__(f"Invalid attribute {name} on str")

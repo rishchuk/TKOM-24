@@ -1,7 +1,7 @@
 from io import StringIO
 
 from src.errors.interpreter_errors import InterpreterError, DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
-    UnexpectedTypeError
+    UnexpectedTypeError, UndefinedVarError, UnexpectedMethodError, UnexpectedAttributeError
 from src.errors.parser_errors import ParserError
 from src.interpreter.environment import Environment
 from src.interpreter.visitor import Visitor
@@ -22,6 +22,20 @@ class Interpreter(Visitor):
         self.env.set_function('float', self.builtin_float)
         self.env.set_function('bool', self.builtin_bool)
         self.env.set_function('str', self.builtin_str)
+        self.env.set_function('toUpper', self.builtin_to_upper)
+        self.env.set_function('toLower', self.builtin_to_lower)
+
+    @staticmethod
+    def builtin_to_upper(value):
+        if isinstance(value, str):
+            return value.upper()
+        raise UnexpectedTypeError("toUpper()")
+
+    @staticmethod
+    def builtin_to_lower(value):
+        if isinstance(value, str):
+            return value.lower()
+        raise UnexpectedTypeError("toLower()")
 
     @staticmethod
     def builtin_print(*args):
@@ -77,6 +91,15 @@ class Interpreter(Visitor):
 
     def visit_FunctionCall(self, func_call):
         func = self.env.get_function(func_call.name)
+        if func_call.parent:
+            val = self.visit(func_call.parent)
+            if val and func_call.name == 'toLower':
+                return self.builtin_to_lower(val)
+
+            if val and func_call.name == 'toUpper':
+                return self.builtin_to_upper(val)
+            raise UnexpectedMethodError(func_call.name)
+
         args = [self.visit(arg) for arg in func_call.args]
         if callable(func):
             return func(*args)
@@ -93,8 +116,7 @@ class Interpreter(Visitor):
         # return interpreter.interpret()
 
     def visit_IfStatement(self, statement):
-        condition = self.visit(statement.condition)
-        if condition:
+        if self.visit(statement.condition):
             self.visit(statement.block)
 
     def visit_WhileStatement(self, statement):
@@ -222,8 +244,23 @@ class Interpreter(Visitor):
 
         return left or right
 
+    # def visit_Identifier(self, identifier):
+    #     return self.env.get_variable(identifier.name)
     def visit_Identifier(self, identifier):
-        return self.env.get_variable(identifier.name)
+        try:
+            return self.env.get_variable(identifier.name)
+        except UndefinedVarError:
+            if identifier.parent:
+
+                if val := self.visit(identifier.parent):
+                    if identifier.name == 'length':
+                        val = len(val)
+                else:
+                    raise UnexpectedAttributeError(identifier.name)
+
+                self.env.set_variable(identifier.name, val)
+                return self.env.get_variable(identifier.name)
+            raise UndefinedVarError(identifier.name)
 
     @staticmethod
     def visit_IntLiteral(int_literal):
@@ -244,6 +281,8 @@ class Interpreter(Visitor):
 
 if __name__ == "__main__":
     code = """ 
+    print("xxx".toUpper())
+    
     value x = 6
     
     function add(a, b) {
