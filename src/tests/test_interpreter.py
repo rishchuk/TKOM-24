@@ -1,12 +1,12 @@
 import unittest
 
-from src.errors.interpreter_errors import UnexpectedTypeError, TypeBinaryError, DivisionByZeroError, TypeUnaryError, \
+from errors.interpreter_errors import UnexpectedTypeError, TypeBinaryError, DivisionByZeroError, TypeUnaryError, \
     UndefinedVarError
-from src.interpreter.environment import Environment
-from src.interpreter.interpreter import Interpreter
-from src.parser.models import IntLiteral, StringLiteral, UnaryOperation, BoolLiteral, VariableDeclaration, Identifier, \
+from interpreter.environment import Environment
+from interpreter.interpreter import Interpreter
+from parser.models import IntLiteral, StringLiteral, UnaryOperation, BoolLiteral, VariableDeclaration, Identifier, \
     FloatLiteral
-from src.parser.parser import Operators
+from parser.parser import Operators
 
 
 class TestInterpreter(unittest.TestCase):

@@ -152,9 +152,6 @@ print(a.length)         # 5
 
 #### 11. String z metodami
 ```
-
-print("test".char(0))
-
 print("TeSt".toLower()) # test
 
 value test = "test"
@@ -183,7 +180,7 @@ function test(t) {
 function main() {
     value t = 1
     test(t)
-    print(a)            # 3
+    print(a)            # 4
     print(t)            # 1
 }
 

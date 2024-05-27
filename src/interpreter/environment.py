@@ -1,4 +1,4 @@
-from src.errors.interpreter_errors import DuplicateFunDeclarationError, DuplicateVarDeclarationError, \
+from errors.interpreter_errors import DuplicateFunDeclarationError, DuplicateVarDeclarationError, \
     UndefinedFunctionError, UndefinedVarError
 
 
@@ -16,7 +16,10 @@ class Environment:
         raise UndefinedVarError(name)
 
     def set_variable(self, name, value):
-        self.variables[name] = value
+        if self.parent or name in self.variables:
+            self.variables[name] = value
+        else:
+            raise UndefinedVarError(name)
 
     def declare_variable(self, name, value):
         if name in self.variables:

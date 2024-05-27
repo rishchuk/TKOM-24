@@ -1,12 +1,13 @@
 from io import StringIO
 
-from src.errors.interpreter_errors import InterpreterError, DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
-    UnexpectedTypeError, UndefinedVarError, UnexpectedMethodError, UnexpectedAttributeError
-from src.errors.parser_errors import ParserError
-from src.interpreter.environment import Environment
-from src.interpreter.visitor import Visitor
-from src.lexer.lexer import CharacterReader, Lexer
-from src.parser.parser import Parser, Operators
+from errors.parser_errors import ParserError
+from lexer.lexer import CharacterReader, Lexer
+from parser.models import FunctionDefinition
+from errors.interpreter_errors import DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
+    UnexpectedTypeError, UndefinedVarError, UnexpectedMethodError, UnexpectedAttributeError, InterpreterError
+from interpreter.environment import Environment
+from interpreter.visitor import Visitor
+from parser.parser import Operators, Parser
 
 
 class Interpreter(Visitor):
@@ -37,9 +38,19 @@ class Interpreter(Visitor):
             return value.lower()
         raise UnexpectedTypeError("toLower()")
 
-    @staticmethod
-    def builtin_print(*args):
+    def builtin_print(self, *args):
+        args = [self.to_string(arg) for arg in args]
         print(*args)
+
+    @staticmethod
+    def to_string(arg):
+        if arg is None:
+            return "null"
+        if arg is True:
+            return "true"
+        if arg is False:
+            return "false"
+        return str(arg)
 
     @staticmethod
     def builtin_int(value):
@@ -101,19 +112,23 @@ class Interpreter(Visitor):
             raise UnexpectedMethodError(func_call.name)
 
         args = [self.visit(arg) for arg in func_call.args]
-        if callable(func):
+        if isinstance(func, FunctionDefinition):
+            return self.execute_function_call(func, args)
+        elif callable(func):
             return func(*args)
-        return self.execute_function(func, args)
+        else:
+            raise InterpreterError(f"Invalid function call: {func_call.name}")
 
-    def execute_function(self, func, args):
-        context = Environment(parent=self.env)
-        for param, arg in zip(func.parameters, args):
-            context.set_variable(param.name, arg)
-        interpreter = Interpreter(func.block)
-        interpreter.env = context
-        result = interpreter.interpret()
-        return interpreter.return_value
-        # return interpreter.interpret()
+    def execute_function_call(self, func_def, args):
+        prev_env = self.env
+        try:
+            self.env = Environment(parent=self.env)
+            for param, arg in zip(func_def.parameters, args):
+                self.env.set_variable(param.name, arg)
+            self.visit(func_def.block)
+            return self.return_value
+        finally:
+            self.env = prev_env
 
     def visit_IfStatement(self, statement):
         if self.visit(statement.condition):
@@ -126,7 +141,10 @@ class Interpreter(Visitor):
     def visit_ForeachStatement(self, statement):
         iterable = self.visit(statement.iterable)
         for item in iterable:
-            self.env.set_variable(statement.variable, item)
+            try:
+                self.env.set_variable(statement.variable, item)
+            except UndefinedVarError:
+                self.env.declare_variable(statement.variable, item)
             self.visit(statement.block)
 
     def visit_ReturnStatement(self, statement):
@@ -252,14 +270,12 @@ class Interpreter(Visitor):
         except UndefinedVarError:
             if identifier.parent:
 
-                if val := self.visit(identifier.parent):
-                    if identifier.name == 'length':
-                        val = len(val)
+                val = self.visit(identifier.parent)
+                if identifier.name == 'length' and isinstance(val, str):
+                    val = len(val)
+                    return val
                 else:
                     raise UnexpectedAttributeError(identifier.name)
-
-                self.env.set_variable(identifier.name, val)
-                return self.env.get_variable(identifier.name)
             raise UndefinedVarError(identifier.name)
 
     @staticmethod
@@ -279,42 +295,42 @@ class Interpreter(Visitor):
         return string_literal.value
 
 
-if __name__ == "__main__":
-    code = """ 
-    print("xxx".toUpper())
-    
-    value x = 6
-    
-    function add(a, b) {
-        return a * b
-    }
-    
-    if x > 5 || x == 4 {
-        print(x)
-    }
-    
-    while x > 2 {
-        x = x - 1
-    }
-    
-    foreach char in "word" {
-        print(char)
-    }
-    
-    value y = 2
-    value result = add(x, y)
-    print("result = ", result)
-    """
-    try:
-        reader = CharacterReader(StringIO(code))
-        lexer = Lexer(reader)
-        parser = Parser(lexer)
-        program = parser.parse_program()
-
-        interpreter = Interpreter(program)
-        interpreter.interpret()
-
-    except ParserError as e:
-        print(e)
-    except InterpreterError as e:
-        print(e)
+# if __name__ == "__main__":
+#     code = """
+#     print("xxx".toUpper())
+#
+#     value x = 6
+#
+#     function add(a, b) {
+#         return a * b
+#     }
+#
+#     if x > 5 || x == 4 {
+#         print(x)
+#     }
+#
+#     while x > 2 {
+#         x = x - 1
+#     }
+#
+#     foreach char in "word" {
+#         print(char)
+#     }
+#
+#     value y = 2
+#     value result = add(x, y)
+#     print("result = ", result)
+#     """
+#     try:
+#         reader = CharacterReader(StringIO(code))
+#         lexer = Lexer(reader)
+#         parser = Parser(lexer)
+#         program = parser.parse_program()
+#
+#         interpreter = Interpreter(program)
+#         interpreter.interpret()
+#
+#     except ParserError as e:
+#         print(e)
+#     except InterpreterError as e:
+#         print(e)

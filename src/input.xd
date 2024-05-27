@@ -18,6 +18,10 @@ while x > 0 {
     x = x - 1
 }
 
+foreach char in "word" {
+    print(char)
+}
+
 function add(x, y) {
     value z = x + y
     print(z)
@@ -37,10 +41,7 @@ function recursive_add(x) {
     }
 }
 
-value a = "hello"
-
-
-value word = input()
+a = "hello"
 
 value c = 8
 recursive_add(c)

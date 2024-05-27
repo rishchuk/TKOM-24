@@ -88,7 +88,7 @@ class TestInterpreter(unittest.TestCase):
         print(str(12))
         print("hello".toUpper())
         print("WORLD".toLower())
-        print("world".length)
+        print("WORLD".length)
         """
         expected_output = "12\n12.5\nfalse\n12\nHELLO\nworld\n5"
         self.assertEqual(self.interpret_code(code), expected_output)
