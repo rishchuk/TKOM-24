@@ -1,12 +1,12 @@
-from src.lexer.lexer import Lexer, CharacterReader, TokenType, StringIO
-from src.errors.parser_errors import ExpectedFunctionNameError, ParserError, ExpectedLeftParentAfterFun, \
+from lexer.lexer import Lexer, CharacterReader, TokenType, StringIO
+from errors.parser_errors import ExpectedFunctionNameError, ParserError, ExpectedLeftParentAfterFun, \
     ExpectedRightParentAfterFun, ExpectedBlockError, ExpectedParameterAfterCommaError, ExpectedRightBraceError, \
     ExpectedLoopVariableError, ExpectedExpressionError, ExpectedInError, ExpectedConditionError, \
     ExpectedVariableNameError, ExpectedAssignmentOrFunctionCall, ExpectedRightParentAfterFunCall, \
     ExpectedArgumentAfterCommaError, ExpectedRightParentAfterExpression, ExpectedIdentifierAfterDotError, \
     UnexpectedTokenError
 from enum import Enum, auto
-from src.parser.models import *
+from parser.models import *
 
 
 class Operators(Enum):

@@ -1,8 +1,8 @@
 import unittest
-from src.parser.parser import Parser
-from src.lexer.lexer import CharacterReader, StringIO, Lexer
-from src.errors.parser_errors import *
-from src.parser.models import *
+from parser.parser import Parser
+from lexer.lexer import CharacterReader, StringIO, Lexer
+from errors.parser_errors import *
+from parser.models import *
 
 
 class TestParser(unittest.TestCase):
@@ -12,8 +12,8 @@ class TestParser(unittest.TestCase):
         lexer = Lexer(reader)
         parser = Parser(lexer)
         program = parser.parse_program()
-        self.assertEqual(len(program.statemens), 1)
-        var = program.statemens[0]
+        self.assertEqual(len(program.statements), 1)
+        var = program.statements[0]
         self.assertIsInstance(var, VariableDeclaration)
         self.assertEqual(var.name, "x")
 
@@ -27,8 +27,8 @@ class TestParser(unittest.TestCase):
         lexer = Lexer(reader)
         parser = Parser(lexer)
         program = parser.parse_program()
-        self.assertEqual(len(program.statemens), 1)
-        if_stat = program.statemens[0]
+        self.assertEqual(len(program.statements), 1)
+        if_stat = program.statements[0]
         self.assertIsInstance(if_stat, IfStatement)
         self.assertIsInstance(if_stat.block, Block)
         self.assertEqual(len(if_stat.block.statements), 1)
@@ -43,8 +43,8 @@ class TestParser(unittest.TestCase):
         lexer = Lexer(reader)
         parser = Parser(lexer)
         program = parser.parse_program()
-        self.assertEqual(len(program.statemens), 1)
-        while_stat = program.statemens[0]
+        self.assertEqual(len(program.statements), 1)
+        while_stat = program.statements[0]
         self.assertIsInstance(while_stat, WhileStatement)
         self.assertIsInstance(while_stat.block, Block)
         self.assertEqual(len(while_stat.block.statements), 1)
@@ -59,8 +59,8 @@ class TestParser(unittest.TestCase):
         lexer = Lexer(reader)
         parser = Parser(lexer)
         program = parser.parse_program()
-        self.assertEqual(len(program.statemens), 1)
-        foreach_stat = program.statemens[0]
+        self.assertEqual(len(program.statements), 1)
+        foreach_stat = program.statements[0]
         self.assertIsInstance(foreach_stat, ForeachStatement)
         self.assertIsInstance(foreach_stat.block, Block)
         self.assertEqual(len(foreach_stat.block.statements), 1)
@@ -75,8 +75,8 @@ class TestParser(unittest.TestCase):
         lexer = Lexer(reader)
         parser = Parser(lexer)
         program = parser.parse_program()
-        self.assertEqual(len(program.statemens), 1)
-        function_def = program.statemens[0]
+        self.assertEqual(len(program.statements), 1)
+        function_def = program.statements[0]
         self.assertIsInstance(function_def, FunctionDefinition)
         self.assertEqual(function_def.name, "add")
         self.assertEqual(len(function_def.parameters), 2)
@@ -96,7 +96,7 @@ class TestParser(unittest.TestCase):
         lexer = Lexer(reader)
         parser = Parser(lexer)
         program = parser.parse_program()
-        function_def = program.statemens[0]
+        function_def = program.statements[0]
         self.assertEqual(len(function_def.parameters), 0)
 
     def test_parse_block(self):
@@ -110,7 +110,7 @@ class TestParser(unittest.TestCase):
         lexer = Lexer(reader)
         parser = Parser(lexer)
         program = parser.parse_program()
-        function_def = program.statemens[0]
+        function_def = program.statements[0]
         self.assertIsInstance(function_def.block, Block)
         self.assertEqual(len(function_def.block.statements), 2)
 
@@ -122,7 +122,7 @@ class TestParser(unittest.TestCase):
         lexer = Lexer(reader)
         parser = Parser(lexer)
         program = parser.parse_program()
-        function_def = program.statemens[0]
+        function_def = program.statements[0]
         self.assertIsInstance(function_def.block, Block)
         self.assertEqual(len(function_def.block.statements), 0)
 
@@ -141,7 +141,7 @@ class TestParser(unittest.TestCase):
         program = parser.parse_program()
         self.assertIsNotNone(program)
         self.assertIsInstance(program, Program)
-        function_def = program.statemens[0]
+        function_def = program.statements[0]
         self.assertIsInstance(function_def, FunctionDefinition)
         if_statement = function_def.block.statements[0]
         self.assertIsInstance(if_statement, IfStatement)

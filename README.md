@@ -80,8 +80,7 @@ print(hello * 2)
 
 #### 3. Przykład komentarza:
 ```
-// To jest komentarz
-# To też jest komentarz
+# To jest komentarz
 ```
 
 #### 4. Przykład instrukcji warunkowej if:
@@ -143,8 +142,8 @@ foreach char in word {
 
 #### 10. String z atrybutem
 ```
-print(!'shoes'.length)  # false
-print('shoes'.length)   # 5
+print(!"shoes".length)  # false
+print("shoes".length)   # 5
 
 value a = "hello"
 print(a.length)         # 5
