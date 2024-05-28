@@ -16,8 +16,10 @@ class Environment:
         raise UndefinedVarError(name)
 
     def set_variable(self, name, value):
-        if self.parent or name in self.variables:
+        if (self.parent and name in self.parent.variables) or name in self.variables:
             self.variables[name] = value
+        # elif self.parent:
+        #     return self.parent.set_variable(name, value)
         else:
             raise UndefinedVarError(name)
 
