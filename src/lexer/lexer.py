@@ -20,6 +20,7 @@ class TokenType(Enum):
     TRUE_CONST = auto()
     FALSE_CONST = auto()
     STRING = auto()
+    NULL = auto()
     EQUAL = auto()
     ADD_OPERATOR = auto()
     MINUS_OPERATOR = auto()
@@ -53,7 +54,8 @@ KEYWORDS = {
     'function': TokenType.FUNCTION,
     'return': TokenType.RETURN,
     'true': TokenType.TRUE_CONST,
-    'false': TokenType.FALSE_CONST
+    'false': TokenType.FALSE_CONST,
+    'null': TokenType.NULL
 }
 
 OPERATORS = {

@@ -377,6 +377,8 @@ class Parser:
             return BoolLiteral(value, position)
         if self.maybe(TokenType.FALSE_CONST):
             return BoolLiteral(value, position)
+        if self.maybe(TokenType.NULL):
+            return NullLiteral(value, position)
         if self.maybe(TokenType.STRING):
             literal = StringLiteral(value, position)
             return self.parse_dot_chain(literal)
@@ -393,6 +395,8 @@ class Parser:
 
     def advance(self):
         self.token = self.lexer.get_next_token()
+        if self.token.type == TokenType.COMMENT:
+            self.advance()
 
 
 if __name__ == "__main__":

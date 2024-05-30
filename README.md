@@ -179,7 +179,7 @@ function test(t) {
 function main() {
     value t = 1
     test(t)
-    print(a)            # 4
+    print(a)            # 3
     print(t)            # 1
 }
 

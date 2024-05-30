@@ -106,6 +106,11 @@ class StringLiteral(Literal):
         super().__init__(value, position)
 
 
+class NullLiteral(Literal):
+    def __init__(self, value, position):
+        super().__init__(value, position)
+
+
 class ReturnStatement(Node):
     def __init__(self, value_expr, position):
         super().__init__(position)

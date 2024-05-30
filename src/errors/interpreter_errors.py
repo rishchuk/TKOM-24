@@ -55,3 +55,8 @@ class UnexpectedMethodError(InterpreterError):
 class UnexpectedAttributeError(InterpreterError):
     def __init__(self, name):
         super().__init__(f"Invalid attribute {name} on str")
+
+
+class InvalidArgsCountError(InterpreterError):
+    def __init__(self, name):
+        super().__init__(f"Invalid count of args for {name}")

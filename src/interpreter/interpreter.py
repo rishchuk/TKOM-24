@@ -2,19 +2,25 @@ from io import StringIO
 
 from errors.parser_errors import ParserError
 from lexer.lexer import CharacterReader, Lexer
-from parser.models import FunctionDefinition
+from parser.models import FunctionDefinition, ReturnStatement
 from errors.interpreter_errors import DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
-    UnexpectedTypeError, UndefinedVarError, UnexpectedMethodError, UnexpectedAttributeError, InterpreterError
+    UnexpectedTypeError, UndefinedVarError, UnexpectedMethodError, UnexpectedAttributeError, InterpreterError, \
+    InvalidArgsCountError
 from interpreter.environment import Environment
 from interpreter.visitor import Visitor
 from parser.parser import Operators, Parser
+
+
+class ReturnException(Exception):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
 
 
 class Interpreter(Visitor):
     def __init__(self, program):
         self.program = program
         self.env = Environment()
-        self.return_value = None
         self.setup_builtins()
 
     def setup_builtins(self):
@@ -122,11 +128,15 @@ class Interpreter(Visitor):
     def execute_function_call(self, func_def, args):
         prev_env = self.env
         try:
+            if len(func_def.parameters) != len(args):
+                raise InvalidArgsCountError(func_def.name)
             self.env = Environment(parent=self.env)
             for param, arg in zip(func_def.parameters, args):
                 self.env.set_variable(param.name, arg)
-            self.visit(func_def.block)
-            return self.return_value
+            try:
+                self.visit(func_def.block)
+            except ReturnException as e:
+                return e.value
         finally:
             self.env = prev_env
 
@@ -148,8 +158,12 @@ class Interpreter(Visitor):
             self.visit(statement.block)
 
     def visit_ReturnStatement(self, statement):
-        self.return_value = self.visit(statement.value_expr)
-        # return self.visit(statement.value_expr)
+        value = self.visit(statement.value_expr) if statement.value_expr else None
+        raise ReturnException(value)
+
+    # def visit_ReturnStatement(self, statement):
+    #     # self.return_value = self.visit(statement.value_expr)
+    #     self.visit(statement.value_expr)
 
     def visit_BinaryOperation(self, expr):
         match expr.operator:
@@ -293,6 +307,10 @@ class Interpreter(Visitor):
     @staticmethod
     def visit_StringLiteral(string_literal):
         return string_literal.value
+
+    @staticmethod
+    def visit_NullLiteral(null_literal):
+        return null_literal.value
 
 
 # if __name__ == "__main__":

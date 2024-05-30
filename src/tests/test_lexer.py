@@ -93,7 +93,7 @@ class TestLexer(unittest.TestCase):
     def test_all_tokens(self):
         code = io.StringIO("""
         if while foreach in value return function identifier 
-        10 10.5 true false "string" = + - * / < > () {} == != <= >= && || #
+        10 10.5 true false "string" null = + - * / < > () {} == != <= >= && || #
         , . !
         """
                            )

@@ -24,23 +24,22 @@ foreach char in "word" {
 
 function add(x, y) {
     value z = x + y
-    print(z)
+    return z
 }
 
 value a = 10
 value b = 5
-add(a, b)
+print(add(a, b))
 
 function recursive_add(x) {
     if x == 5 {
-        return 0
+        return x
     }
     if x >= 5 {
         x = x - 1
         recursive_add(x)
     }
 }
-
 a = "hello"
 
 value c = 8
