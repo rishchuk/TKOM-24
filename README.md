@@ -275,23 +275,19 @@ special_character = " " | "!" | "#" | "$" | "%"
 W przypadku napotkania błędu, zgłaszany jest odpowiedni wyjątek, praca nie jest kontynuowana i użytkownik otrzymuje komunikat o błędzie.\
 Komunikaty o błędach mogą zawierać informacje o mejsce błędu, gdzie zostsał napotkany.
 ```
-Error line 2:
-Undefined variable: 'x'
+Variable 'x' not defined: Line: 1, Column: 7
 ```
 
 ```
-Error line 2:
-Undefined function 'add'
+Expected 'in': Line: 21, Column: 14
 ```
 
 ```
-Error line 2:
-Wrong number of arguments
+Invalid count of args for add: Line: 7, Column: 10
 ```
 
 ```
-Error line 2:
-Syntax Error: Expected '}' to close block
+Expected '}' to close block: Line: 5, Column 1
 ```
 
 ### Sposób uruchomienia
@@ -299,6 +295,9 @@ Syntax Error: Expected '}' to close block
 Może być uruchamiany z wiersza poleceń, gdzie użytkownik podaje plik źródłowy jako argument.
 
 Po wykonaniu interpretera, można oczekiwać wyjście na konsoli.
+```
+python main.py [file.xd]
+```
 
 ### Analiza wymagań funkcjonalnych i niefunkcjonalnych
 

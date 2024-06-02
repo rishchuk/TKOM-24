@@ -36,13 +36,13 @@ class Interpreter(Visitor):
     def builtin_to_upper(value):
         if isinstance(value, str):
             return value.upper()
-        raise UnexpectedTypeError("toUpper()")
+        raise UnexpectedTypeError("toUpper()", position=None)
 
     @staticmethod
     def builtin_to_lower(value):
         if isinstance(value, str):
             return value.lower()
-        raise UnexpectedTypeError("toLower()")
+        raise UnexpectedTypeError("toLower()", position=None)
 
     def builtin_print(self, *args):
         args = [self.to_string(arg) for arg in args]
@@ -64,8 +64,8 @@ class Interpreter(Visitor):
             try:
                 return int(value)
             except ValueError:
-                raise UnexpectedTypeError("int()")
-        raise UnexpectedTypeError("int()")
+                raise UnexpectedTypeError("int()", position=None)
+        raise UnexpectedTypeError("int()", position=None)
 
     @staticmethod
     def builtin_float(value):
@@ -73,8 +73,8 @@ class Interpreter(Visitor):
             try:
                 return float(value)
             except ValueError:
-                raise UnexpectedTypeError("float()")
-        raise UnexpectedTypeError("float()")
+                raise UnexpectedTypeError("float()", position=None)
+        raise UnexpectedTypeError("float()", position=None)
 
     @staticmethod
     def builtin_bool(value):
@@ -92,8 +92,16 @@ class Interpreter(Visitor):
             self.visit(statement)
 
     def visit_Block(self, block):
-        for statement in block.statements:
-            self.visit(statement)
+        self.execute_block(block, Environment(self.env))
+
+    def execute_block(self, block, env):
+        prev_env = self.env
+        try:
+            self.env = env
+            for statement in block.statements:
+                self.visit(statement)
+        finally:
+            self.env = prev_env
 
     def visit_FunctionDefinition(self, func_def):
         self.env.set_function(func_def.name, func_def)
@@ -115,7 +123,7 @@ class Interpreter(Visitor):
 
             if val and func_call.name == 'toUpper':
                 return self.builtin_to_upper(val)
-            raise UnexpectedMethodError(func_call.name)
+            raise UnexpectedMethodError(func_call.name, func_call.position)
 
         args = [self.visit(arg) for arg in func_call.args]
         if isinstance(func, FunctionDefinition):
@@ -123,22 +131,20 @@ class Interpreter(Visitor):
         elif callable(func):
             return func(*args)
         else:
-            raise InterpreterError(f"Invalid function call: {func_call.name}")
+            raise InterpreterError(f"Invalid function call: {func_call.name}", func_call.position)
 
     def execute_function_call(self, func_def, args):
-        prev_env = self.env
+        if len(func_def.parameters) != len(args):
+            raise InvalidArgsCountError(func_def.name, func_def.position)
+        env = Environment(parent=self.env)
+        for param, arg in zip(func_def.parameters, args):
+            env.declare_variable(param.name, arg)
         try:
-            if len(func_def.parameters) != len(args):
-                raise InvalidArgsCountError(func_def.name)
-            self.env = Environment(parent=self.env)
-            for param, arg in zip(func_def.parameters, args):
-                self.env.set_variable(param.name, arg)
-            try:
-                self.visit(func_def.block)
-            except ReturnException as e:
-                return e.value
-        finally:
-            self.env = prev_env
+            self.execute_block(func_def.block, env)
+        except ReturnException as e:
+            return e.value
+        # finally:
+        #     self.env = prev_env
 
     def visit_IfStatement(self, statement):
         if self.visit(statement.condition):
@@ -198,7 +204,7 @@ class Interpreter(Visitor):
         right = self.visit(right_expr)
 
         if isinstance(left, str) or isinstance(right, str):
-            raise TypeBinaryError()
+            raise TypeBinaryError(left_expr.position)
 
         return left - right
 
@@ -210,7 +216,7 @@ class Interpreter(Visitor):
         if isinstance(right, str) and isinstance(left, int):
             return right * left
         if isinstance(left, str) or isinstance(right, str):
-            raise TypeBinaryError()
+            raise TypeBinaryError(left_expr.position)
         return left * right
 
     def binary_div(self, left_expr, right_expr):
@@ -218,9 +224,9 @@ class Interpreter(Visitor):
         right = self.visit(right_expr)
 
         if right == 0:
-            raise DivisionByZeroError()
+            raise DivisionByZeroError(left_expr.position)
         if isinstance(left, str) or isinstance(right, str):
-            raise TypeBinaryError()
+            raise TypeBinaryError(left_expr.position)
 
         return left / right
 
@@ -235,9 +241,9 @@ class Interpreter(Visitor):
                 return left == right
             elif operator == Operators.NOT_EQUALS:
                 return left != right
-            raise TypeBinaryError()
+            raise TypeBinaryError(left_expr.position)
         else:
-            raise TypeBinaryError()
+            raise TypeBinaryError(left_expr.position)
 
         match operator:
             case Operators.EQUALS:
@@ -262,7 +268,7 @@ class Interpreter(Visitor):
             case Operators.MINUS_OPERATOR:
                 if isinstance(right, (int, float)):
                     return -right
-                raise TypeUnaryError()
+                raise TypeUnaryError(expr.position)
 
     def logical_and(self, left_expr, right_expr):
         left = self.visit(left_expr)
@@ -289,8 +295,8 @@ class Interpreter(Visitor):
                     val = len(val)
                     return val
                 else:
-                    raise UnexpectedAttributeError(identifier.name)
-            raise UndefinedVarError(identifier.name)
+                    raise UnexpectedAttributeError(identifier.name, identifier.position)
+            raise UndefinedVarError(identifier.name, identifier.position)
 
     @staticmethod
     def visit_IntLiteral(int_literal):

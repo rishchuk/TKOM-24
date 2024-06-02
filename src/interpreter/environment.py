@@ -13,19 +13,19 @@ class Environment:
             return self.variables[name]
         elif self.parent:
             return self.parent.get_variable(name)
-        raise UndefinedVarError(name)
+        raise UndefinedVarError(name, position=None)
 
     def set_variable(self, name, value):
-        if (self.parent and name in self.parent.variables) or name in self.variables:
+        if name in self.variables:
             self.variables[name] = value
         elif self.parent:
-            return self.parent.set_variable(name, value)
+            self.parent.set_variable(name, value)
         else:
-            raise UndefinedVarError(name)
+            raise UndefinedVarError(name, position=None)
 
     def declare_variable(self, name, value):
         if name in self.variables:
-            raise DuplicateVarDeclarationError(name)
+            raise DuplicateVarDeclarationError(name, position=None)
         self.variables[name] = value
 
     def get_function(self, name):
@@ -33,9 +33,9 @@ class Environment:
             return self.functions[name]
         elif self.parent:
             return self.parent.get_function(name)
-        raise UndefinedFunctionError(name)
+        raise UndefinedFunctionError(name, position=None)
 
     def set_function(self, name, func):
         if name in self.functions:
-            raise DuplicateFunDeclarationError(name)
+            raise DuplicateFunDeclarationError(name, position=None)
         self.functions[name] = func
