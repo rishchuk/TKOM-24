@@ -16,7 +16,7 @@ class Interpreter(Visitor):
         self.program = program
         self.env = Environment()
         self.setup_builtins()
-        self.return_encountered = True
+        self.return_encountered = False
         self.return_value = None
 
     def setup_builtins(self):
@@ -39,6 +39,8 @@ class Interpreter(Visitor):
             self.env = env
             for statement in block.statements:
                 statement.accept(self)
+                if self.return_encountered:
+                    break
         finally:
             self.env = prev_env
 
@@ -59,7 +61,6 @@ class Interpreter(Visitor):
             val = func_call.parent.accept(self)
             if isinstance(func, (ToUpper, ToLower)):
                 return func.accept(val)
-
             raise UnexpectedMethodError(func_call.name, func_call.position)
 
         args = [arg.accept(self) for arg in func_call.args]
@@ -76,23 +77,27 @@ class Interpreter(Visitor):
         env = Environment(parent=self.env)
         for param, arg in zip(func_def.parameters, args):
             env.declare_variable(param.name, arg)
+        prev_return_encountered = self.return_encountered
+        prev_return_value = self.return_value
         self.return_encountered = False
         self.return_value = None
-        try:
-            self.execute_block(func_def.block, env)
-        finally:
-            if self.return_encountered:
-                return self.return_value
-        # finally:
-        #     self.env = prev_env
+        self.execute_block(func_def.block, env)
+        return_value = self.return_value
+        self.return_encountered = prev_return_encountered
+        self.return_value = prev_return_value
+        return return_value
 
     def visit_if_statement(self, statement):
         if statement.condition.accept(self):
             statement.block.accept(self)
+            if self.return_encountered:
+                return
 
     def visit_while_statement(self, statement):
         while statement.condition.accept(self):
             statement.block.accept(self)
+            if self.return_encountered:
+                return
 
     def visit_foreach_statement(self, statement):
         iterable = statement.iterable.accept(self)
@@ -103,16 +108,14 @@ class Interpreter(Visitor):
                 else:
                     self.env.declare_variable(statement.variable, item)
                 statement.block.accept(self)
+                if self.return_encountered:
+                    return
         else:
             raise UnexpectedTypeError(statement.variable, statement.iterable.position)
 
     def visit_return_statement(self, statement):
         self.return_encountered = True
         self.return_value = statement.value_expr.accept(self) if statement.value_expr else None
-
-    # def visit_ReturnStatement(self, statement):
-    #     # self.return_value = self.visit(statement.value_expr)
-    #     self.visit(statement.value_expr)
 
     def visit_binary_operation(self, expr):
         match expr.operator:
@@ -136,7 +139,6 @@ class Interpreter(Visitor):
     def binary_plus(self, left_expr, right_expr):
         left = left_expr.accept(self)
         right = right_expr.accept(self)
-
         if isinstance(left, str) or isinstance(right, str):
             return str(left) + str(right)
         else:
@@ -145,10 +147,8 @@ class Interpreter(Visitor):
     def binary_minus(self, left_expr, right_expr):
         left = left_expr.accept(self)
         right = right_expr.accept(self)
-
         if isinstance(left, str) or isinstance(right, str):
             raise TypeBinaryError(left_expr.position)
-
         return left - right
 
     def binary_mult(self, left_expr, right_expr):
@@ -165,18 +165,15 @@ class Interpreter(Visitor):
     def binary_div(self, left_expr, right_expr):
         left = left_expr.accept(self)
         right = right_expr.accept(self)
-
         if right == 0:
             raise DivisionByZeroError(left_expr.position)
         if isinstance(left, str) or isinstance(right, str):
             raise TypeBinaryError(left_expr.position)
-
         return left / right
 
     def comparison(self, operator, left_expr, right_expr):
         left = left_expr.accept(self)
         right = right_expr.accept(self)
-
         if isinstance(left, (int, float)) and isinstance(right, (int, float)):
             pass
         elif isinstance(left, str) and isinstance(right, str):
@@ -187,7 +184,6 @@ class Interpreter(Visitor):
             raise TypeBinaryError(left_expr.position)
         else:
             raise TypeBinaryError(left_expr.position)
-
         match operator:
             case Operators.EQUALS:
                 return left == right
@@ -204,7 +200,6 @@ class Interpreter(Visitor):
 
     def visit_unary_operation(self, expr):
         right = expr.right.accept(self)
-
         match expr.operator:
             case Operators.NEG:
                 return not right
@@ -213,11 +208,10 @@ class Interpreter(Visitor):
                     return -right
                 raise TypeUnaryError(expr.position)
 
-    def logical_and(self, left_expr, right_expr):  # lenivie
+    def logical_and(self, left_expr, right_expr):
         left = left_expr.accept(self)
         if not left:
             return left
-
         return right_expr.accept(self)
 
     def logical_or(self, left_expr, right_expr):
@@ -226,8 +220,6 @@ class Interpreter(Visitor):
             return left
         return right_expr.accept(self)
 
-    # def visit_Identifier(self, identifier):
-    #     return self.env.get_variable(identifier.name)
     def visit_identifier(self, identifier):
         if identifier.parent:
             val = identifier.parent.accept(self)
@@ -239,11 +231,7 @@ class Interpreter(Visitor):
         if self.env.get_variable(identifier.name) is not None:
             return self.env.get_variable(identifier.name)
         raise UndefinedVarError(identifier.name, identifier.position)
-    # except UndefinedVarError:
-    #
-    #     raise UndefinedVarError(identifier.name, identifier.position)
 
-    # nic nie zwraca
     def visit_int_literal(self, int_literal):
         return int_literal.value
 
