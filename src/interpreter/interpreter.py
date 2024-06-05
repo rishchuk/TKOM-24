@@ -2,19 +2,12 @@ from io import StringIO
 
 from errors.parser_errors import ParserError
 from lexer.lexer import CharacterReader, Lexer
-from parser.models import FunctionDefinition, ReturnStatement
+from parser.models import FunctionDefinition, ReturnStatement, Visitor
 from errors.interpreter_errors import DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
     UnexpectedTypeError, UndefinedVarError, UnexpectedMethodError, UnexpectedAttributeError, InterpreterError, \
     InvalidArgsCountError
 from interpreter.environment import Environment
-from interpreter.visitor import Visitor
 from parser.parser import Operators, Parser
-
-
-class ReturnException(Exception):
-    def __init__(self, value):
-        super().__init__()
-        self.value = value
 
 
 class Interpreter(Visitor):
@@ -22,6 +15,8 @@ class Interpreter(Visitor):
         self.program = program
         self.env = Environment()
         self.setup_builtins()
+        self.return_encountered = True
+        self.return_value = None
 
     def setup_builtins(self):
         self.env.set_function('print', self.builtin_print)
@@ -85,13 +80,13 @@ class Interpreter(Visitor):
         return str(value)
 
     def interpret(self):
-        return self.visit(self.program)
+        return self.program.accept(self)
 
-    def visit_Program(self, program):
+    def visit_program(self, program):
         for statement in program.statements:
-            self.visit(statement)
+            statement.accept(self)
 
-    def visit_Block(self, block):
+    def visit_block(self, block):
         self.execute_block(block, Environment(self.env))
 
     def execute_block(self, block, env):
@@ -99,25 +94,25 @@ class Interpreter(Visitor):
         try:
             self.env = env
             for statement in block.statements:
-                self.visit(statement)
+                statement.accept(self)
         finally:
             self.env = prev_env
 
-    def visit_FunctionDefinition(self, func_def):
+    def visit_function_definition(self, func_def):
         self.env.set_function(func_def.name, func_def)
 
-    def visit_VariableDeclaration(self, var):
-        value = self.visit(var.value_expr) if var.value_expr else None
+    def visit_variable_declaration(self, var):
+        value = var.value_expr.accept(self) if var.value_expr else None
         self.env.declare_variable(var.name, value)
 
-    def visit_Assignment(self, expr):
-        value = self.visit(expr.value_expr)
+    def visit_assignment(self, expr):
+        value = expr.value_expr.accept(self)
         self.env.set_variable(expr.name, value)
 
-    def visit_FunctionCall(self, func_call):
+    def visit_function_call(self, func_call):
         func = self.env.get_function(func_call.name)
         if func_call.parent:
-            val = self.visit(func_call.parent)
+            val = func_call.parent.accept(self)
             if val and func_call.name == 'toLower':
                 return self.builtin_to_lower(val)
 
@@ -125,7 +120,7 @@ class Interpreter(Visitor):
                 return self.builtin_to_upper(val)
             raise UnexpectedMethodError(func_call.name, func_call.position)
 
-        args = [self.visit(arg) for arg in func_call.args]
+        args = [arg.accept(self) for arg in func_call.args]
         if isinstance(func, FunctionDefinition):
             return self.execute_function_call(func, args)
         elif callable(func):
@@ -139,39 +134,45 @@ class Interpreter(Visitor):
         env = Environment(parent=self.env)
         for param, arg in zip(func_def.parameters, args):
             env.declare_variable(param.name, arg)
+        self.return_encountered = False
+        self.return_value = None
         try:
             self.execute_block(func_def.block, env)
-        except ReturnException as e:
-            return e.value
+        finally:
+            if self.return_encountered:
+                return self.return_value
         # finally:
         #     self.env = prev_env
 
-    def visit_IfStatement(self, statement):
-        if self.visit(statement.condition):
-            self.visit(statement.block)
+    def visit_if_statement(self, statement):
+        if statement.condition.accept(self):
+            statement.block.accept(self)
 
-    def visit_WhileStatement(self, statement):
-        while self.visit(statement.condition):
-            self.visit(statement.block)
+    def visit_while_statement(self, statement):
+        while statement.condition.accept(self):
+            statement.block.accept(self)
 
-    def visit_ForeachStatement(self, statement):
-        iterable = self.visit(statement.iterable)
-        for item in iterable:
-            try:
-                self.env.set_variable(statement.variable, item)
-            except UndefinedVarError:
-                self.env.declare_variable(statement.variable, item)
-            self.visit(statement.block)
+    def visit_foreach_statement(self, statement):
+        iterable = statement.iterable.accept(self)
+        if isinstance(iterable, str):
+            for item in iterable:
+                if self.env.get_variable(statement.variable):
+                    self.env.set_variable(statement.variable, item)
+                else:
+                    self.env.declare_variable(statement.variable, item)
+                statement.block.accept(self)
+        else:
+            raise UnexpectedTypeError(statement.variable, statement.iterable.position)
 
-    def visit_ReturnStatement(self, statement):
-        value = self.visit(statement.value_expr) if statement.value_expr else None
-        raise ReturnException(value)
+    def visit_return_statement(self, statement):
+        self.return_encountered = True
+        self.return_value = statement.value_expr.accept(self) if statement.value_expr else None
 
     # def visit_ReturnStatement(self, statement):
     #     # self.return_value = self.visit(statement.value_expr)
     #     self.visit(statement.value_expr)
 
-    def visit_BinaryOperation(self, expr):
+    def visit_binary_operation(self, expr):
         match expr.operator:
             case Operators.ADD_OPERATOR:
                 return self.binary_plus(expr.left, expr.right)
@@ -191,8 +192,8 @@ class Interpreter(Visitor):
                 return self.logical_or(expr.left, expr.right)
 
     def binary_plus(self, left_expr, right_expr):
-        left = self.visit(left_expr)
-        right = self.visit(right_expr)
+        left = left_expr.accept(self)
+        right = right_expr.accept(self)
 
         if isinstance(left, str) or isinstance(right, str):
             return str(left) + str(right)
@@ -200,8 +201,8 @@ class Interpreter(Visitor):
             return left + right
 
     def binary_minus(self, left_expr, right_expr):
-        left = self.visit(left_expr)
-        right = self.visit(right_expr)
+        left = left_expr.accept(self)
+        right = right_expr.accept(self)
 
         if isinstance(left, str) or isinstance(right, str):
             raise TypeBinaryError(left_expr.position)
@@ -209,8 +210,8 @@ class Interpreter(Visitor):
         return left - right
 
     def binary_mult(self, left_expr, right_expr):
-        left = self.visit(left_expr)
-        right = self.visit(right_expr)
+        left = left_expr.accept(self)
+        right = right_expr.accept(self)
         if isinstance(left, str) and isinstance(right, int):
             return left * right
         if isinstance(right, str) and isinstance(left, int):
@@ -220,8 +221,8 @@ class Interpreter(Visitor):
         return left * right
 
     def binary_div(self, left_expr, right_expr):
-        left = self.visit(left_expr)
-        right = self.visit(right_expr)
+        left = left_expr.accept(self)
+        right = right_expr.accept(self)
 
         if right == 0:
             raise DivisionByZeroError(left_expr.position)
@@ -231,8 +232,8 @@ class Interpreter(Visitor):
         return left / right
 
     def comparison(self, operator, left_expr, right_expr):
-        left = self.visit(left_expr)
-        right = self.visit(right_expr)
+        left = left_expr.accept(self)
+        right = right_expr.accept(self)
 
         if isinstance(left, (int, float)) and isinstance(right, (int, float)):
             pass
@@ -259,8 +260,8 @@ class Interpreter(Visitor):
             case Operators.GREATER_THAN_OR_EQUAL:
                 return left >= right
 
-    def visit_UnaryOperation(self, expr):
-        right = self.visit(expr.right)
+    def visit_unary_operation(self, expr):
+        right = expr.right.accept(self)
 
         match expr.operator:
             case Operators.NEG:
@@ -270,52 +271,50 @@ class Interpreter(Visitor):
                     return -right
                 raise TypeUnaryError(expr.position)
 
-    def logical_and(self, left_expr, right_expr):
-        left = self.visit(left_expr)
-        right = self.visit(right_expr)
+    def logical_and(self, left_expr, right_expr):  # lenivie
+        left = left_expr.accept(self)
+        if not left:
+            return left
 
-        return left and right
+        return right_expr.accept(self)
 
     def logical_or(self, left_expr, right_expr):
-        left = self.visit(left_expr)
-        right = self.visit(right_expr)
-
-        return left or right
+        left = left_expr.accept(self)
+        if left:
+            return left
+        return right_expr.accept(self)
 
     # def visit_Identifier(self, identifier):
     #     return self.env.get_variable(identifier.name)
-    def visit_Identifier(self, identifier):
-        try:
+    def visit_identifier(self, identifier):
+        if identifier.parent:
+            val = identifier.parent.accept(self)
+            if identifier.name == 'length' and isinstance(val, str):
+                val = len(val)
+                return val
+            else:
+                raise UnexpectedAttributeError(identifier.name, identifier.position)
+        if self.env.get_variable(identifier.name) is not None:
             return self.env.get_variable(identifier.name)
-        except UndefinedVarError:
-            if identifier.parent:
+        raise UndefinedVarError(identifier.name, identifier.position)
+    # except UndefinedVarError:
+    #
+    #     raise UndefinedVarError(identifier.name, identifier.position)
 
-                val = self.visit(identifier.parent)
-                if identifier.name == 'length' and isinstance(val, str):
-                    val = len(val)
-                    return val
-                else:
-                    raise UnexpectedAttributeError(identifier.name, identifier.position)
-            raise UndefinedVarError(identifier.name, identifier.position)
-
-    @staticmethod
-    def visit_IntLiteral(int_literal):
+    # nic nie zwraca
+    def visit_int_literal(self, int_literal):
         return int_literal.value
 
-    @staticmethod
-    def visit_FloatLiteral(float_literal):
+    def visit_float_literal(self, float_literal):
         return float_literal.value
 
-    @staticmethod
-    def visit_BoolLiteral(bool_literal):
+    def visit_bool_literal(self, bool_literal):
         return bool_literal.value
 
-    @staticmethod
-    def visit_StringLiteral(string_literal):
+    def visit_string_literal(self, string_literal):
         return string_literal.value
 
-    @staticmethod
-    def visit_NullLiteral(null_literal):
+    def visit_null_literal(self, null_literal):
         return null_literal.value
 
 

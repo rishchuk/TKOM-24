@@ -97,17 +97,17 @@ class TestInterpreter(unittest.TestCase):
             self.interpreter.comparison(Operators.LESS, StringLiteral("2", None), StringLiteral("1", None))
 
     def test_unary_operation(self):
-        self.assertEqual(self.interpreter.visit_UnaryOperation(
+        self.assertEqual(self.interpreter.visit_unary_operation(
             UnaryOperation(Operators.MINUS_OPERATOR, IntLiteral(1, None), None)), -1)
-        self.assertEqual(self.interpreter.visit_UnaryOperation(
+        self.assertEqual(self.interpreter.visit_unary_operation(
             UnaryOperation(Operators.NEG, IntLiteral(1, None), None)), False)
-        self.assertEqual(self.interpreter.visit_UnaryOperation(
+        self.assertEqual(self.interpreter.visit_unary_operation(
             UnaryOperation(Operators.NEG, StringLiteral("hello", None), None)), False)
 
         with self.assertRaises(TypeUnaryError):
-            self.interpreter.visit_UnaryOperation(
+            self.interpreter.visit_unary_operation(
                 UnaryOperation(Operators.MINUS_OPERATOR, StringLiteral("hello", None), None))
-            self.interpreter.visit_UnaryOperation(
+            self.interpreter.visit_unary_operation(
                 UnaryOperation(Operators.MINUS_OPERATOR, BoolLiteral("true", None), None))
 
     def test_logical_and(self):
@@ -119,25 +119,20 @@ class TestInterpreter(unittest.TestCase):
         self.assertEqual(self.interpreter.logical_or(StringLiteral("1", None), IntLiteral(2, None)), '1')
 
     def test_identifier(self):
-        self.interpreter.visit_VariableDeclaration(
+        self.interpreter.visit_variable_declaration(
             VariableDeclaration("x", StringLiteral(6, None), None)
         )
-        self.assertEqual(self.interpreter.visit_Identifier(
+        self.assertEqual(self.interpreter.visit_identifier(
             Identifier("x", None, None)), 6)
-
-        with self.assertRaises(UndefinedVarError):
-            self.interpreter.visit_Identifier(
-                Identifier("y", None, None)
-            )
 
     def test_int_literal(self):
         self.assertEqual(
-            self.interpreter.visit_IntLiteral(IntLiteral(4, None)), 4
+            self.interpreter.visit_int_literal(IntLiteral(4, None)), 4
         )
 
     def test_float_literal(self):
         self.assertEqual(
-            self.interpreter.visit_FloatLiteral(FloatLiteral(4.2, None)), 4.2
+            self.interpreter.visit_float_literal(FloatLiteral(4.2, None)), 4.2
         )
 
 

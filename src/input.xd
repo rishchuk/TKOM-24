@@ -22,6 +22,10 @@ foreach char in "word" {
     print(char)
 }
 
+function abb() {
+    z = 2
+}
+
 function add(x, y) {
     value z = x + y
     return z
@@ -36,11 +40,12 @@ function recursive_add(x) {
         return x
     }
     if x >= 5 {
-        x = x - 1
+        x = x - 1   # RecursionError: maximum recursion depth exceeded
         recursive_add(x)
     }
 }
-a = "hello"
 
+a = "hello".length
+print(a)
 value c = 8
 recursive_add(c)

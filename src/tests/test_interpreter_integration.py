@@ -4,7 +4,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 
 from errors.interpreter_errors import DivisionByZeroError, TypeBinaryError, UnexpectedTypeError, \
-    UndefinedFunctionError, UndefinedVarError
+    UndefinedFunctionError, UndefinedVarError, UnexpectedMethodError
 from interpreter.interpreter import Interpreter
 from lexer.lexer import CharacterReader, Lexer
 from parser.parser import Parser
@@ -99,12 +99,12 @@ class TestInterpreter(unittest.TestCase):
         value b = 10 - 2
         value c = 4 * 2
         value d = 9 / 2
-        print(a, b, c, d)
 
-        value e = 4 < 3
+        value e = 4 <= 3
         value f = 4 > 3
         value g = 5 == 5
         value h = 5 != 3
+        print(a, b, c, d)
         print(e, f, g, h)
         """
         expected_output = "5 8 8 4.5\nfalse true true true"
@@ -127,7 +127,7 @@ class TestInterpreter(unittest.TestCase):
 
     def test_unexpected_method_error(self):
         code = 'value result = "hello".f()'
-        with self.assertRaises(UndefinedFunctionError):
+        with self.assertRaises(UnexpectedMethodError):
             self.interpret_code(code)
 
     def test_unexpected_var_error(self):

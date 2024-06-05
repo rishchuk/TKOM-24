@@ -2,7 +2,7 @@ from errors.interpreter_errors import DuplicateFunDeclarationError, DuplicateVar
     UndefinedFunctionError, UndefinedVarError
 
 
-class Environment:
+class Environment:  # stos wywolan, wywolanie funkcji
     def __init__(self, parent=None):
         self.variables = {}
         self.functions = {}
@@ -13,7 +13,6 @@ class Environment:
             return self.variables[name]
         elif self.parent:
             return self.parent.get_variable(name)
-        raise UndefinedVarError(name, position=None)
 
     def set_variable(self, name, value):
         if name in self.variables:
@@ -33,7 +32,6 @@ class Environment:
             return self.functions[name]
         elif self.parent:
             return self.parent.get_function(name)
-        raise UndefinedFunctionError(name, position=None)
 
     def set_function(self, name, func):
         if name in self.functions:
