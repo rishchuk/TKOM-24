@@ -1,8 +1,8 @@
 from errors.interpreter_errors import DuplicateFunDeclarationError, DuplicateVarDeclarationError, \
-    UndefinedFunctionError, UndefinedVarError
+    UndefinedVarError
 
 
-class Environment:  # stos wywolan, wywolanie funkcji
+class Environment:
     def __init__(self, parent=None):
         self.variables = {}
         self.functions = {}

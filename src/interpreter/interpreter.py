@@ -124,7 +124,7 @@ class Interpreter(Visitor):
         if isinstance(func, FunctionDefinition):
             return self.execute_function_call(func, args)
         elif callable(func):
-            return func(*args)
+            return func(*args)  # z get fun
         else:
             raise InterpreterError(f"Invalid function call: {func_call.name}", func_call.position)
 
@@ -150,6 +150,8 @@ class Interpreter(Visitor):
 
     def visit_while_statement(self, statement):
         while statement.condition.accept(self):
+            if self.return_encountered:
+                break
             statement.block.accept(self)
 
     def visit_foreach_statement(self, statement):

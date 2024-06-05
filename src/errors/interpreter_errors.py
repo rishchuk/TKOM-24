@@ -63,3 +63,8 @@ class UnexpectedAttributeError(InterpreterError):
 class InvalidArgsCountError(InterpreterError):
     def __init__(self, name, position):
         super().__init__(f"Invalid count of args for {name}", position)
+
+
+class RecursionLimitError(InterpreterError):
+    def __init__(self, position=None):
+        super().__init__("Maximum recursion depth exceeded", position)
