@@ -1,9 +1,7 @@
 from io import StringIO
 
-from traitlets import Float
-
 from errors.parser_errors import ParserError
-from interpreter.builtin_functions import PrintFun, Int, Bool, Str, ToUpper, ToLower
+from interpreter.builtin_functions import PrintFun, Int, Float, Bool, Str, ToUpper, ToLower
 from lexer.lexer import CharacterReader, Lexer
 from parser.models import FunctionDefinition, ReturnStatement, Visitor
 from errors.interpreter_errors import DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
@@ -60,7 +58,7 @@ class Interpreter(Visitor):
         if func_call.parent:
             val = func_call.parent.accept(self)
             if isinstance(func, (ToUpper, ToLower)):
-                return func.accept(self, val)
+                return func.accept(val)
 
             raise UnexpectedMethodError(func_call.name, func_call.position)
 
@@ -68,7 +66,7 @@ class Interpreter(Visitor):
         if isinstance(func, FunctionDefinition):
             return self.execute_function_call(func, args)
         elif isinstance(func, (PrintFun, Int, Float, Bool, Str)):
-            return func.accept(self, *args)
+            return func.accept(*args)
         else:
             raise InterpreterError(f"Invalid function call: {func_call.name}", func_call.position)
 
@@ -94,8 +92,6 @@ class Interpreter(Visitor):
 
     def visit_while_statement(self, statement):
         while statement.condition.accept(self):
-            if self.return_encountered:
-                break
             statement.block.accept(self)
 
     def visit_foreach_statement(self, statement):

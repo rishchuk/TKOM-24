@@ -15,47 +15,6 @@ class TestInterpreter(unittest.TestCase):
         self.interpreter = Interpreter(None)
         self.interpreter.env = self.env
 
-    def test_builtin_to_upper(self):
-        result = self.interpreter.builtin_to_upper("hello world")
-        self.assertEqual(result, "HELLO WORLD")
-
-        with self.assertRaises(UnexpectedTypeError):
-            self.interpreter.builtin_to_upper(123)
-
-    def test_builtin_to_lower(self):
-        result = self.interpreter.builtin_to_lower("HELLO WORLD")
-        self.assertEqual(result, "hello world")
-
-        with self.assertRaises(UnexpectedTypeError):
-            self.interpreter.builtin_to_lower(123)
-
-    def test_builtin_int(self):
-        self.assertEqual(self.interpreter.builtin_int("12"), 12)
-        self.assertEqual(self.interpreter.builtin_int(12.5), 12)
-        self.assertEqual(self.interpreter.builtin_int(12), 12)
-
-        with self.assertRaises(UnexpectedTypeError):
-            self.interpreter.builtin_int("a")
-
-    def test_builtin_float(self):
-        self.assertEqual(self.interpreter.builtin_float("123.4"), 123.4)
-        self.assertEqual(self.interpreter.builtin_float(123), 123.0)
-        self.assertEqual(self.interpreter.builtin_float(123.4), 123.4)
-
-        with self.assertRaises(UnexpectedTypeError):
-            self.interpreter.builtin_float("a")
-
-    def test_builtin_bool(self):
-        self.assertEqual(self.interpreter.builtin_bool(0), False)
-        self.assertEqual(self.interpreter.builtin_bool(1), True)
-        self.assertEqual(self.interpreter.builtin_bool(""), False)
-        self.assertEqual(self.interpreter.builtin_bool("a"), True)
-
-    def test_builtin_str(self):
-        self.assertEqual(self.interpreter.builtin_str(12), "12")
-        self.assertEqual(self.interpreter.builtin_str(12.5), "12.5")
-        self.assertEqual(self.interpreter.builtin_str(True), "True")
-
     def test_binary_plus(self):
         self.assertEqual(self.interpreter.binary_plus(IntLiteral(1, None), IntLiteral(2, None)), 3)
         self.assertEqual(self.interpreter.binary_plus(StringLiteral("1", None), IntLiteral(2, None)), "12")

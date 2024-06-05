@@ -4,7 +4,7 @@ from errors.interpreter_errors import UnexpectedTypeError
 class PrintFun:
     name = "print"
 
-    def accept(self, _, *args):
+    def accept(self, *args):
         args = [self.to_string(arg) for arg in args]
         print(*args)
 
@@ -22,7 +22,7 @@ class PrintFun:
 class Int:
     name = "int"
 
-    def accept(self, _, value):
+    def accept(self, value):
         if isinstance(value, (int, float, str)):
             try:
                 return int(value)
@@ -34,7 +34,7 @@ class Int:
 class Float:
     name = "float"
 
-    def accept(self, _, value):
+    def accept(self, value):
         if isinstance(value, (int, float, str)):
             try:
                 return float(value)
@@ -46,21 +46,21 @@ class Float:
 class Bool:
     name = "bool"
 
-    def accept(self, _, value):
+    def accept(self, value):
         return bool(value)
 
 
 class Str:
     name = "str"
 
-    def accept(self, _, value):
+    def accept(self, value):
         return str(value)
 
 
 class ToUpper:
     name = "toUpper"
 
-    def accept(self, _, value):
+    def accept(self, value):
         if isinstance(value, str):
             return value.upper()
         raise UnexpectedTypeError("toUpper()", position=None)
@@ -69,7 +69,7 @@ class ToUpper:
 class ToLower:
     name = "toLower"
 
-    def accept(self, _, value):
+    def accept(self, value):
         if isinstance(value, str):
             return value.lower()
         raise UnexpectedTypeError("toLower()", position=None)
