@@ -1,5 +1,5 @@
 from errors.interpreter_errors import DuplicateFunDeclarationError, DuplicateVarDeclarationError, \
-    UndefinedVarError
+    UndefinedVarError, UnexpectedTypeError
 
 
 class Environment:
@@ -26,6 +26,9 @@ class Environment:
         if name in self.variables:
             raise DuplicateVarDeclarationError(name, position=None)
         self.variables[name] = value
+
+    def define_builtins_function(self, function):
+        self.set_function(function.name, function)
 
     def get_function(self, name):
         if name in self.functions:

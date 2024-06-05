@@ -1,6 +1,9 @@
 from io import StringIO
 
+from traitlets import Float
+
 from errors.parser_errors import ParserError
+from interpreter.builtin_functions import PrintFun, Int, Bool, Str, ToUpper, ToLower
 from lexer.lexer import CharacterReader, Lexer
 from parser.models import FunctionDefinition, ReturnStatement, Visitor
 from errors.interpreter_errors import DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
@@ -19,65 +22,8 @@ class Interpreter(Visitor):
         self.return_value = None
 
     def setup_builtins(self):
-        self.env.set_function('print', self.builtin_print)
-        self.env.set_function('int', self.builtin_int)
-        self.env.set_function('float', self.builtin_float)
-        self.env.set_function('bool', self.builtin_bool)
-        self.env.set_function('str', self.builtin_str)
-        self.env.set_function('toUpper', self.builtin_to_upper)
-        self.env.set_function('toLower', self.builtin_to_lower)
-
-    @staticmethod
-    def builtin_to_upper(value):
-        if isinstance(value, str):
-            return value.upper()
-        raise UnexpectedTypeError("toUpper()", position=None)
-
-    @staticmethod
-    def builtin_to_lower(value):
-        if isinstance(value, str):
-            return value.lower()
-        raise UnexpectedTypeError("toLower()", position=None)
-
-    def builtin_print(self, *args):
-        args = [self.to_string(arg) for arg in args]
-        print(*args)
-
-    @staticmethod
-    def to_string(arg):
-        if arg is None:
-            return "null"
-        if arg is True:
-            return "true"
-        if arg is False:
-            return "false"
-        return str(arg)
-
-    @staticmethod
-    def builtin_int(value):
-        if isinstance(value, (int, float, str)):
-            try:
-                return int(value)
-            except ValueError:
-                raise UnexpectedTypeError("int()", position=None)
-        raise UnexpectedTypeError("int()", position=None)
-
-    @staticmethod
-    def builtin_float(value):
-        if isinstance(value, (int, float, str)):
-            try:
-                return float(value)
-            except ValueError:
-                raise UnexpectedTypeError("float()", position=None)
-        raise UnexpectedTypeError("float()", position=None)
-
-    @staticmethod
-    def builtin_bool(value):
-        return bool(value)
-
-    @staticmethod
-    def builtin_str(value):
-        return str(value)
+        for fun in (PrintFun, Int, Float, Bool, Str, ToUpper, ToLower):
+            self.env.define_builtins_function(fun())
 
     def interpret(self):
         return self.program.accept(self)
@@ -113,18 +59,16 @@ class Interpreter(Visitor):
         func = self.env.get_function(func_call.name)
         if func_call.parent:
             val = func_call.parent.accept(self)
-            if val and func_call.name == 'toLower':
-                return self.builtin_to_lower(val)
+            if isinstance(func, (ToUpper, ToLower)):
+                return func.accept(self, val)
 
-            if val and func_call.name == 'toUpper':
-                return self.builtin_to_upper(val)
             raise UnexpectedMethodError(func_call.name, func_call.position)
 
         args = [arg.accept(self) for arg in func_call.args]
         if isinstance(func, FunctionDefinition):
             return self.execute_function_call(func, args)
-        elif callable(func):
-            return func(*args)  # z get fun
+        elif isinstance(func, (PrintFun, Int, Float, Bool, Str)):
+            return func.accept(self, *args)
         else:
             raise InterpreterError(f"Invalid function call: {func_call.name}", func_call.position)
 
