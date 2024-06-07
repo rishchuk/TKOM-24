@@ -127,6 +127,22 @@ class TestInterpreter(unittest.TestCase):
         expected_output = "5 8 8 4.5\nfalse true true true"
         self.assertEqual(self.interpret_code(code), expected_output)
 
+    def test_unary_operations(self):
+        code = """
+        print(!true)
+        print(-5)
+        """
+        expected_output = "false\n-5"
+        self.assertEqual(self.interpret_code(code), expected_output)
+
+    def test_logical_or_and(self):
+        code = """
+        print(2 && 2)
+        print(1 || 2)
+        """
+        expected_output = "2\n1"
+        self.assertEqual(self.interpret_code(code), expected_output)
+
     def test_foreach_error(self):
         code = """
         foreach char in 2 {

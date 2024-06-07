@@ -234,12 +234,12 @@ class Interpreter(Visitor):
                     raise TypeUnaryError(expr.position)
 
     def logical_and(self, left, right):
-        if not left:
+        if not left or left == "false":
             return left
         return right
 
     def logical_or(self, left, right):
-        if left:
+        if left and left != "false":
             return left
         return right
 
