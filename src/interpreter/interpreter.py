@@ -32,14 +32,13 @@ class Interpreter(Visitor):
             self.env.define_builtins_function(fun())
 
     def interpret(self):
-        return self.program.accept(self)
+        self.program.accept(self)
+        return self.result
 
     def visit_program(self, program):
-        # 2 visitator przed 1 statement, separuje od definicji funkcji
-        for statement in program.statements:  # deklaracja funcji
+        for statement in program.statements:
             self.check_recursion_depth()
             statement.accept(self)
-        # statements, definicje funkcji
 
     def visit_block(self, block):
         for statement in block.statements:
@@ -64,52 +63,68 @@ class Interpreter(Visitor):
         self.env.set_function(func_def.name, func_def)
 
     def visit_variable_declaration(self, var):
-        value = var.value_expr.accept(self) if var.value_expr else None
+        if var.value_expr:
+            var.value_expr.accept(self)
+            value = self.result
+        else:
+            value = None
         self.env.declare_variable(var.name, value)
 
     def visit_assignment(self, expr):
-        value = expr.value_expr.accept(self)
+        expr.value_expr.accept(self)
+        value = self.result
         self.env.set_variable(expr.name, value)
 
     def visit_function_call(self, func_call):
         func = self.env.get_function(func_call.name)
 
         if func_call.parent:
-            val = func_call.parent.accept(self)
+            func_call.parent.accept(self)
+            val = self.result
             if isinstance(func, (ToUpper, ToLower)):
                 executor = BuiltInFunctionExecutor()
                 func.accept(executor, val)
-                return executor.result
-        args = [arg.accept(self) for arg in func_call.args]
+                self.result = executor.result
+                return
+
+        args = []
+        for arg in func_call.args:
+            arg.accept(self)
+            args.append(self.result)
 
         if isinstance(func, (PrintFun, Int, Float, Str, Bool)):
             executor = BuiltInFunctionExecutor()
             func.accept(executor, *args)
-            return executor.result
+            self.result = executor.result
         elif isinstance(func, FunctionDefinition):
             self.check_recursion_depth()
             self.recursion_depth += 1
             try:
-                return func.execute(args, self)
+                self.result = func.execute(args, self)
             finally:
                 self.recursion_depth -= 1
         else:
             raise UndefinedFunctionError(func_call.name, func_call.position)
 
     def visit_if_statement(self, statement):
-        if statement.condition.accept(self):
+        statement.condition.accept(self)
+        if self.result:
             statement.block.accept(self)
             if self.return_encountered:
                 return
 
     def visit_while_statement(self, statement):
-        while statement.condition.accept(self):
+        while True:
+            statement.condition.accept(self)
+            if not self.result:
+                break
             statement.block.accept(self)
             if self.return_encountered:
-                return
+                break
 
     def visit_foreach_statement(self, statement):
-        iterable = statement.iterable.accept(self)
+        statement.iterable.accept(self)
+        iterable = self.result
         if isinstance(iterable, str):
             for item in iterable:
                 if self.env.get_variable(statement.variable):
@@ -124,65 +139,64 @@ class Interpreter(Visitor):
 
     def visit_return_statement(self, statement):
         self.return_encountered = True
-        self.return_value = statement.value_expr.accept(self) if statement.value_expr else None
+        if statement.value_expr:
+            statement.value_expr.accept(self)
+            self.return_value = self.result
+        else:
+            self.return_value = None
 
     def visit_binary_operation(self, expr):
+        expr.left.accept(self)
+        left = self.result
+        expr.right.accept(self)
+        right = self.result
+
         match expr.operator:
             case Operators.ADD_OPERATOR:
-                return self.binary_plus(expr.left, expr.right)
+                self.result = self.binary_plus(left, right)
             case Operators.MINUS_OPERATOR:
-                return self.binary_minus(expr.left, expr.right)
+                self.result = self.binary_minus(left, right)
             case Operators.MULT_OPERATOR:
-                return self.binary_mult(expr.left, expr.right)
+                self.result = self.binary_mult(left, right)
             case Operators.DIV_OPERATOR:
-                return self.binary_div(expr.left, expr.right)
+                self.result = self.binary_div(left, right)
             case (Operators.EQUALS | Operators.NOT_EQUALS | Operators.LESS
                   | Operators.GREATER | Operators.LESS_THAN_OR_EQUAL
                   | Operators.GREATER_THAN_OR_EQUAL):
-                return self.comparison(expr.operator, expr.left, expr.right)
+                self.result = self.comparison(expr.operator, left, right)
             case Operators.AND_OPERATOR:
-                return self.logical_and(expr.left, expr.right)
+                self.result = self.logical_and(left, right)
             case Operators.OR_OPERATOR:
-                return self.logical_or(expr.left, expr.right)
+                self.result = self.logical_or(left, right)
 
-    def binary_plus(self, left_expr, right_expr):
-        left = left_expr.accept(self)
-        right = right_expr.accept(self)
+    def binary_plus(self, left, right):
         if isinstance(left, str) or isinstance(right, str):
             return str(left) + str(right)
         else:
             return left + right
 
-    def binary_minus(self, left_expr, right_expr):
-        left = left_expr.accept(self)
-        right = right_expr.accept(self)
+    def binary_minus(self, left, right):
         if isinstance(left, str) or isinstance(right, str):
-            raise TypeBinaryError(left_expr.position)
+            raise TypeBinaryError(position=None)
         return left - right
 
-    def binary_mult(self, left_expr, right_expr):
-        left = left_expr.accept(self)
-        right = right_expr.accept(self)
+    def binary_mult(self, left, right):
         if isinstance(left, str) and isinstance(right, int):
             return left * right
         if isinstance(right, str) and isinstance(left, int):
             return right * left
         if isinstance(left, str) or isinstance(right, str):
-            raise TypeBinaryError(left_expr.position)
+            raise TypeBinaryError(position=None)
         return left * right
 
-    def binary_div(self, left_expr, right_expr):
-        left = left_expr.accept(self)
-        right = right_expr.accept(self)
+    def binary_div(self, left, right):
         if right == 0:
-            raise DivisionByZeroError(left_expr.position)
+            raise DivisionByZeroError(position=None)
         if isinstance(left, str) or isinstance(right, str):
-            raise TypeBinaryError(left_expr.position)
+            raise TypeBinaryError(position=None)
         return left / right
 
-    def comparison(self, operator, left_expr, right_expr):
-        left = left_expr.accept(self)
-        right = right_expr.accept(self)
+    def comparison(self, operator, left, right):
         if isinstance(left, (int, float)) and isinstance(right, (int, float)):
             pass
         elif isinstance(left, str) and isinstance(right, str):
@@ -190,9 +204,9 @@ class Interpreter(Visitor):
                 return left == right
             elif operator == Operators.NOT_EQUALS:
                 return left != right
-            raise TypeBinaryError(left_expr.position)
+            raise TypeBinaryError(position=None)
         else:
-            raise TypeBinaryError(left_expr.position)
+            raise TypeBinaryError(position=None)
         match operator:
             case Operators.EQUALS:
                 return left == right
@@ -208,53 +222,54 @@ class Interpreter(Visitor):
                 return left >= right
 
     def visit_unary_operation(self, expr):
-        right = expr.right.accept(self)
+        expr.right.accept(self)
+        right = self.result
         match expr.operator:
             case Operators.NEG:
-                return not right
+                self.result = not right
             case Operators.MINUS_OPERATOR:
                 if isinstance(right, (int, float)):
-                    return -right
-                raise TypeUnaryError(expr.position)
+                    self.result = -right
+                else:
+                    raise TypeUnaryError(expr.position)
 
-    def logical_and(self, left_expr, right_expr):
-        left = left_expr.accept(self)
+    def logical_and(self, left, right):
         if not left:
             return left
-        return right_expr.accept(self)
+        return right
 
-    def logical_or(self, left_expr, right_expr):
-        left = left_expr.accept(self)
+    def logical_or(self, left, right):
         if left:
             return left
-        return right_expr.accept(self)
+        return right
 
     def visit_identifier(self, identifier):
         if identifier.parent:
-            val = identifier.parent.accept(self)
+            identifier.parent.accept(self)
+            val = self.result
             if identifier.name == 'length' and isinstance(val, str):
-                val = len(val)
-                return val
+                self.result = len(val)
             else:
                 raise UnexpectedAttributeError(identifier.name, identifier.position)
-        if self.env.get_variable(identifier.name):
-            return self.env.get_variable(identifier.name)[0]
-        raise UndefinedVarError(identifier.name, identifier.position)
+        elif self.env.get_variable(identifier.name):
+            self.result = self.env.get_variable(identifier.name)[0]
+        else:
+            raise UndefinedVarError(identifier.name, identifier.position)
 
     def visit_int_literal(self, int_literal):
-        return int_literal.value
+        self.result = int_literal.value
 
     def visit_float_literal(self, float_literal):
-        return float_literal.value
+        self.result = float_literal.value
 
     def visit_bool_literal(self, bool_literal):
-        return bool_literal.value
+        self.result = bool_literal.value
 
     def visit_string_literal(self, string_literal):
-        return string_literal.value
+        self.result = string_literal.value
 
     def visit_null_literal(self, null_literal):
-        return null_literal.value
+        self.result = null_literal.value
 
 
 # if __name__ == "__main__":

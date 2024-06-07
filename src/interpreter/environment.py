@@ -1,8 +1,8 @@
 from errors.interpreter_errors import DuplicateFunDeclarationError, DuplicateVarDeclarationError, \
-    UndefinedVarError, UnexpectedTypeError
+    UndefinedVarError
 
 
-class Environment:  # widocznosci
+class Environment:
     def __init__(self, parent=None):
         self.variables = {}
         self.functions = {}
