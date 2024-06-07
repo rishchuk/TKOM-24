@@ -2,7 +2,7 @@ from errors.interpreter_errors import DuplicateFunDeclarationError, DuplicateVar
     UndefinedVarError, UnexpectedTypeError
 
 
-class Environment:
+class Environment:  # widocznosci
     def __init__(self, parent=None):
         self.variables = {}
         self.functions = {}
@@ -10,7 +10,7 @@ class Environment:
 
     def get_variable(self, name):
         if name in self.variables:
-            return self.variables[name]
+            return [self.variables[name]]
         elif self.parent:
             return self.parent.get_variable(name)
 

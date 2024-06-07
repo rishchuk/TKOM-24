@@ -1,12 +1,13 @@
 from io import StringIO
 
 from errors.parser_errors import ParserError
-from interpreter.builtin_functions import PrintFun, Int, Float, Bool, Str, ToUpper, ToLower
+from interpreter.builtin_functions import PrintFun, Int, Float, Bool, Str, ToUpper, ToLower, BuiltInFunction, \
+    BuiltInFunctionExecutor
 from lexer.lexer import CharacterReader, Lexer
 from parser.models import FunctionDefinition, ReturnStatement, Visitor
 from errors.interpreter_errors import DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
     UnexpectedTypeError, UndefinedVarError, UnexpectedMethodError, UnexpectedAttributeError, InterpreterError, \
-    InvalidArgsCountError
+    InvalidArgsCountError, RecursionLimitError, UndefinedFunctionError
 from interpreter.environment import Environment
 from parser.parser import Operators, Parser
 
@@ -18,6 +19,13 @@ class Interpreter(Visitor):
         self.setup_builtins()
         self.return_encountered = False
         self.return_value = None
+        self.max_recursion_depth = 80
+        self.recursion_depth = 0
+        self.result = None
+
+    def check_recursion_depth(self):
+        if self.recursion_depth > self.max_recursion_depth:
+            raise RecursionLimitError()
 
     def setup_builtins(self):
         for fun in (PrintFun, Int, Float, Bool, Str, ToUpper, ToLower):
@@ -27,10 +35,13 @@ class Interpreter(Visitor):
         return self.program.accept(self)
 
     def visit_program(self, program):
-        for statement in program.statements:
+        # 2 visitator przed 1 statement, separuje od definicji funkcji
+        for statement in program.statements:  # deklaracja funcji
+            self.check_recursion_depth()
             statement.accept(self)
+        # statements, definicje funkcji
 
-    def visit_block(self, block):
+    def visit_block(self, block):   # visit_block
         self.execute_block(block, Environment(self.env))
 
     def execute_block(self, block, env):
@@ -38,6 +49,7 @@ class Interpreter(Visitor):
         try:
             self.env = env
             for statement in block.statements:
+                self.check_recursion_depth()
                 statement.accept(self)
                 if self.return_encountered:
                     break
@@ -57,35 +69,48 @@ class Interpreter(Visitor):
 
     def visit_function_call(self, func_call):
         func = self.env.get_function(func_call.name)
+
         if func_call.parent:
             val = func_call.parent.accept(self)
             if isinstance(func, (ToUpper, ToLower)):
-                return func.accept(val)
-            raise UnexpectedMethodError(func_call.name, func_call.position)
-
+                executor = BuiltInFunctionExecutor()
+                func.accept(executor, val)
+                return executor.result
         args = [arg.accept(self) for arg in func_call.args]
-        if isinstance(func, FunctionDefinition):
-            return self.execute_function_call(func, args)
-        elif isinstance(func, (PrintFun, Int, Float, Bool, Str)):
-            return func.accept(*args)
-        else:
-            raise InterpreterError(f"Invalid function call: {func_call.name}", func_call.position)
 
-    def execute_function_call(self, func_def, args):
-        if len(func_def.parameters) != len(args):
-            raise InvalidArgsCountError(func_def.name, func_def.position)
-        env = Environment(parent=self.env)
-        for param, arg in zip(func_def.parameters, args):
-            env.declare_variable(param.name, arg)
-        prev_return_encountered = self.return_encountered
-        prev_return_value = self.return_value
-        self.return_encountered = False
-        self.return_value = None
-        self.execute_block(func_def.block, env)
-        return_value = self.return_value
-        self.return_encountered = prev_return_encountered
-        self.return_value = prev_return_value
-        return return_value
+        if isinstance(func, (PrintFun, Int, Float, Str, Bool)):
+            executor = BuiltInFunctionExecutor()
+            func.accept(executor, *args)
+            return executor.result
+        elif isinstance(func, FunctionDefinition):
+            self.check_recursion_depth()
+            self.recursion_depth += 1
+            try:
+                return func.execute(args, self)
+            finally:
+                self.recursion_depth -= 1
+        else:
+            raise UndefinedFunctionError(func_call.name, func_call.position)
+
+    # def execute_function_call(self, func_def, args):
+    #     self.recursion_depth += 1
+    #     try:
+    #         if len(func_def.parameters) != len(args):
+    #             raise InvalidArgsCountError(func_def.name, func_def.position)
+    #         env = Environment(parent=self.env)
+    #         for param, arg in zip(func_def.parameters, args):
+    #             env.declare_variable(param.name, arg)
+    #         prev_return_encountered = self.return_encountered
+    #         prev_return_value = self.return_value
+    #         self.return_encountered = False
+    #         self.return_value = None
+    #         func_def.block.accept(self)
+    #         return_value = self.return_value
+    #         self.return_encountered = prev_return_encountered
+    #         self.return_value = prev_return_value
+    #         return return_value
+    #     finally:
+    #         self.recursion_depth -= 1
 
     def visit_if_statement(self, statement):
         if statement.condition.accept(self):
@@ -228,8 +253,9 @@ class Interpreter(Visitor):
                 return val
             else:
                 raise UnexpectedAttributeError(identifier.name, identifier.position)
-        if self.env.get_variable(identifier.name) is not None:
-            return self.env.get_variable(identifier.name)
+        if self.env.get_variable(identifier.name):
+            return self.env.get_variable(identifier.name)[0]
+
         raise UndefinedVarError(identifier.name, identifier.position)
 
     def visit_int_literal(self, int_literal):

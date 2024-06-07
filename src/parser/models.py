@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 
+from errors.interpreter_errors import InvalidArgsCountError
+from interpreter.environment import Environment
+
 
 class Node:
     def __init__(self, position):
@@ -47,6 +50,18 @@ class FunctionDefinition(Node):
 
     def accept(self, visitor):
         return visitor.visit_function_definition(self)
+
+    def execute(self, args, interpreter):
+        if len(self.parameters) != len(args):
+            raise InvalidArgsCountError(self.name, self.position)
+        env = Environment(parent=interpreter.env)
+        for param, arg in zip(self.parameters, args):
+            env.declare_variable(param.name, arg)
+        interpreter.execute_block(self.block, env)
+        return_value = interpreter.return_value
+        interpreter.return_encountered = False
+        interpreter.return_value = None
+        return return_value
 
 
 class Block(Node):

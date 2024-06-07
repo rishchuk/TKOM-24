@@ -47,6 +47,23 @@ class TestInterpreter(unittest.TestCase):
         expected_output = "7"
         self.assertEqual(self.interpret_code(code), expected_output)
 
+    def test_return(self):
+        code = """
+        function add(a, b) {
+            if a > b {
+                return a
+            }
+            if b > a {
+                return b
+            }
+            return a + b
+        }
+        value result = add(3, 4)
+        print(result)
+        """
+        expected_output = "4"
+        self.assertEqual(self.interpret_code(code), expected_output)
+
     def test_if_statement(self):
         code = """
         value x = 5
@@ -110,6 +127,15 @@ class TestInterpreter(unittest.TestCase):
         expected_output = "5 8 8 4.5\nfalse true true true"
         self.assertEqual(self.interpret_code(code), expected_output)
 
+    def test_foreach_error(self):
+        code = """
+        foreach char in 2 {
+            print(char)
+        }
+        """
+        with self.assertRaises(UnexpectedTypeError):
+            self.interpret_code(code)
+
     def test_div_by_zero(self):
         code = "value result = 10 / 0"
         with self.assertRaises(DivisionByZeroError):
@@ -127,7 +153,7 @@ class TestInterpreter(unittest.TestCase):
 
     def test_unexpected_method_error(self):
         code = 'value result = "hello".f()'
-        with self.assertRaises(UnexpectedMethodError):
+        with self.assertRaises(UndefinedFunctionError):
             self.interpret_code(code)
 
     def test_unexpected_var_error(self):
