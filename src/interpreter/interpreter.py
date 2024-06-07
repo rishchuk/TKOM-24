@@ -41,8 +41,12 @@ class Interpreter(Visitor):
             statement.accept(self)
         # statements, definicje funkcji
 
-    def visit_block(self, block):   # visit_block
-        self.execute_block(block, Environment(self.env))
+    def visit_block(self, block):
+        for statement in block.statements:
+            self.check_recursion_depth()
+            statement.accept(self)
+            if self.return_encountered:
+                break
 
     def execute_block(self, block, env):
         prev_env = self.env
@@ -91,26 +95,6 @@ class Interpreter(Visitor):
                 self.recursion_depth -= 1
         else:
             raise UndefinedFunctionError(func_call.name, func_call.position)
-
-    # def execute_function_call(self, func_def, args):
-    #     self.recursion_depth += 1
-    #     try:
-    #         if len(func_def.parameters) != len(args):
-    #             raise InvalidArgsCountError(func_def.name, func_def.position)
-    #         env = Environment(parent=self.env)
-    #         for param, arg in zip(func_def.parameters, args):
-    #             env.declare_variable(param.name, arg)
-    #         prev_return_encountered = self.return_encountered
-    #         prev_return_value = self.return_value
-    #         self.return_encountered = False
-    #         self.return_value = None
-    #         func_def.block.accept(self)
-    #         return_value = self.return_value
-    #         self.return_encountered = prev_return_encountered
-    #         self.return_value = prev_return_value
-    #         return return_value
-    #     finally:
-    #         self.recursion_depth -= 1
 
     def visit_if_statement(self, statement):
         if statement.condition.accept(self):
@@ -255,7 +239,6 @@ class Interpreter(Visitor):
                 raise UnexpectedAttributeError(identifier.name, identifier.position)
         if self.env.get_variable(identifier.name):
             return self.env.get_variable(identifier.name)[0]
-
         raise UndefinedVarError(identifier.name, identifier.position)
 
     def visit_int_literal(self, int_literal):

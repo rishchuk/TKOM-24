@@ -187,7 +187,7 @@ value x = true          # x jest teraz wartością logiczną (bool)
 value a = 4
 
 function test(t) {
-    a = 3
+    value a = 3
     print(a)            # 3
     t = t + 1
     print(t)            # 2
@@ -196,7 +196,7 @@ function test(t) {
 function main() {
     value t = 1
     test(t)
-    print(a)            # 3
+    print(a)            # 4
     print(t)            # 1
 }
 

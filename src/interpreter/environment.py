@@ -17,8 +17,6 @@ class Environment:  # widocznosci
     def set_variable(self, name, value):
         if name in self.variables:
             self.variables[name] = value
-        elif self.parent:
-            self.parent.set_variable(name, value)
         else:
             raise UndefinedVarError(name, position=None)
 

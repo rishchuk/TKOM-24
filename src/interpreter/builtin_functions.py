@@ -1,5 +1,3 @@
-# from errors.interpreter_errors import UnexpectedTypeError, InvalidArgsCountError
-# from interpreter.environment import Environment
 from abc import ABC, abstractmethod
 
 from errors.interpreter_errors import UnexpectedTypeError
