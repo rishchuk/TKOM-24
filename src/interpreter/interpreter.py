@@ -1,8 +1,7 @@
 from io import StringIO
 
 from errors.parser_errors import ParserError
-from interpreter.builtin_functions import PrintFun, Int, Float, Bool, Str, ToUpper, ToLower, BuiltInFunction, \
-    BuiltInFunctionExecutor
+from interpreter.builtin_functions import PrintFun, Int, Float, Bool, Str, ToUpper, ToLower, Statement
 from lexer.lexer import CharacterReader, Lexer
 from parser.models import FunctionDefinition, ReturnStatement, Visitor
 from errors.interpreter_errors import DivisionByZeroError, TypeBinaryError, TypeUnaryError, \
@@ -18,10 +17,10 @@ class Interpreter(Visitor):
         self.env = Environment()
         self.setup_builtins()
         self.return_encountered = False
-        self.return_value = None
         self.max_recursion_depth = 80
         self.recursion_depth = 0
         self.result = None
+        self.return_value = None
 
     def check_recursion_depth(self):
         if self.recursion_depth > self.max_recursion_depth:
@@ -29,38 +28,34 @@ class Interpreter(Visitor):
 
     def setup_builtins(self):
         for fun in (PrintFun, Int, Float, Bool, Str, ToUpper, ToLower):
-            self.env.define_builtins_function(fun())
+            self.env.define_builtins_function(fun(None))
 
     def interpret(self):
         self.program.accept(self)
-        return self.result
 
     def visit_program(self, program):
+        function_definitions = []
+        statements = []
         for statement in program.statements:
-            self.check_recursion_depth()
-            statement.accept(self)
+            if isinstance(statement, FunctionDefinition):
+                function_definitions.append(statement)
+            else:
+                statements.append(statement)
+
+        for func_def in function_definitions:
+            func_def.accept(self)
+
+        for stmt in statements:
+            stmt.accept(self)
 
     def visit_block(self, block):
         for statement in block.statements:
-            self.check_recursion_depth()
             statement.accept(self)
             if self.return_encountered:
                 break
 
-    def execute_block(self, block, env):
-        prev_env = self.env
-        try:
-            self.env = env
-            for statement in block.statements:
-                self.check_recursion_depth()
-                statement.accept(self)
-                if self.return_encountered:
-                    break
-        finally:
-            self.env = prev_env
-
     def visit_function_definition(self, func_def):
-        self.env.set_function(func_def.name, func_def)
+        self.env.set_function(func_def)
 
     def visit_variable_declaration(self, var):
         if var.value_expr:
@@ -77,14 +72,14 @@ class Interpreter(Visitor):
 
     def visit_function_call(self, func_call):
         func = self.env.get_function(func_call.name)
+        self.return_encountered = False
+        self.return_value = None
 
         if func_call.parent:
             func_call.parent.accept(self)
             val = self.result
             if isinstance(func, (ToUpper, ToLower)):
-                executor = BuiltInFunctionExecutor()
-                func.accept(executor, val)
-                self.result = executor.result
+                func.accept(self, val)
                 return
 
         args = []
@@ -93,16 +88,21 @@ class Interpreter(Visitor):
             args.append(self.result)
 
         if isinstance(func, (PrintFun, Int, Float, Str, Bool)):
-            executor = BuiltInFunctionExecutor()
-            func.accept(executor, *args)
-            self.result = executor.result
+            func.accept(self, *args)
         elif isinstance(func, FunctionDefinition):
             self.check_recursion_depth()
             self.recursion_depth += 1
             try:
-                self.result = func.execute(args, self)
+                if len(args) != len(func.parameters):
+                    raise InvalidArgsCountError(func_call.name, func_call.position)
+
+                self.env.new_scope(func.parameters, args)
+                func.block.accept(self)
+                self.result = self.return_value
+                self.env.del_scope()
             finally:
                 self.recursion_depth -= 1
+
         else:
             raise UndefinedFunctionError(func_call.name, func_call.position)
 
@@ -114,13 +114,17 @@ class Interpreter(Visitor):
                 return
 
     def visit_while_statement(self, statement):
+        self.recursion_depth = 0
         while True:
+            self.check_recursion_depth()
             statement.condition.accept(self)
             if not self.result:
                 break
             statement.block.accept(self)
             if self.return_encountered:
                 break
+
+            self.recursion_depth += 1
 
     def visit_foreach_statement(self, statement):
         statement.iterable.accept(self)
@@ -150,6 +154,9 @@ class Interpreter(Visitor):
         left = self.result
         expr.right.accept(self)
         right = self.result
+
+        if self.is_boolean(left): left = self.to_bool(left)
+        if self.is_boolean(right): right = self.to_bool(right)
 
         match expr.operator:
             case Operators.ADD_OPERATOR:
@@ -226,6 +233,7 @@ class Interpreter(Visitor):
         right = self.result
         match expr.operator:
             case Operators.NEG:
+                if self.is_boolean(right): right = self.to_bool(right)
                 self.result = not right
             case Operators.MINUS_OPERATOR:
                 if isinstance(right, (int, float)):
@@ -234,12 +242,12 @@ class Interpreter(Visitor):
                     raise TypeUnaryError(expr.position)
 
     def logical_and(self, left, right):
-        if not left or left == "false":
+        if not left:
             return left
         return right
 
     def logical_or(self, left, right):
-        if left and left != "false":
+        if left:
             return left
         return right
 
@@ -270,6 +278,60 @@ class Interpreter(Visitor):
 
     def visit_null_literal(self, null_literal):
         self.result = null_literal.value
+
+    def visit_print(self, fun, *args):
+        args = [self.to_string(arg) for arg in args]
+        print(*args)
+
+    @staticmethod
+    def to_string(arg):
+        if arg is None:
+            return "null"
+        if arg is True:
+            return "true"
+        if arg is False:
+            return "false"
+        return str(arg)
+
+    def visit_int(self, fun, value):
+        try:
+            self.result = int(value)
+        except ValueError:
+            raise UnexpectedTypeError("int()", position=None)
+
+    def visit_float(self, fun, value):
+        try:
+            self.result = float(value)
+        except ValueError:
+            raise UnexpectedTypeError("float()", position=None)
+
+    def visit_bool(self, fun, value):
+        self.result = bool(value)
+
+    def visit_str(self, fun, value):
+        self.result = str(value)
+
+    def visit_to_upper(self, fun, value):
+        if isinstance(value, str):
+            self.result = value.upper()
+        else:
+            raise UnexpectedTypeError("toUpper()", position=None)
+
+    def visit_to_lower(self, fun, value):
+        if isinstance(value, str):
+            self.result = value.lower()
+        else:
+            raise UnexpectedTypeError("toLower()", position=None)
+
+    def is_boolean(self, value):
+        return isinstance(value, str) and value in {"true", "false"}
+
+    def to_bool(self, value):
+        if value == "true":
+            return True
+        elif value == "false":
+            return False
+        raise UnexpectedTypeError(value, None)
 
 
 # if __name__ == "__main__":

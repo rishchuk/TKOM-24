@@ -1,47 +1,40 @@
 from abc import ABC, abstractmethod
 
-from errors.interpreter_errors import InvalidArgsCountError
-from interpreter.environment import Environment
 
+# class Node:
+#     def __init__(self, position):
+#         self.position = position
+#
+#     def __str__(self, level=0):
+#         indent = "  " * level
+#         result = f"{indent}{self.__class__.__name__}:\n"
+#         for key, value in vars(self).items():
+#             if isinstance(value, Node):
+#                 result += value.__str__(level + 1)
+#             else:
+#                 result += f"{indent}  {key}: {value}\n"
+#         return result
+#
+#     def __repr__(self):
+#         return self.__str__()
 
-class Node:
-    def __init__(self, position):
-        self.position = position
-
-    def __str__(self, level=0):
-        indent = "  " * level
-        result = f"{indent}{self.__class__.__name__}:\n"
-        for key, value in vars(self).items():
-            if isinstance(value, Node):
-                result += value.__str__(level + 1)
-            else:
-                result += f"{indent}  {key}: {value}\n"
-        return result
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class Program(Node):
+class Program:
     def __init__(self, statements):
-        super().__init__(None)
         self.statements = statements
 
     def accept(self, visitor):
-        return visitor.visit_block(self)
+        visitor.visit_program(self)
 
 
-class Identifier(Node):
-    def __init__(self, name, position, parent):
-        super().__init__(position)
-        self.name = name
-        self.parent = parent
+class Statement(ABC):
+    def __init__(self, position):
+        self.position = position
 
     def accept(self, visitor):
-        return visitor.visit_identifier(self)
+        pass
 
 
-class FunctionDefinition(Node):
+class FunctionDefinition(Statement):
     def __init__(self, name, parameters, block, position):
         super().__init__(position)
         self.name = name
@@ -49,41 +42,29 @@ class FunctionDefinition(Node):
         self.block = block
 
     def accept(self, visitor):
-        return visitor.visit_function_definition(self)
-
-    def execute(self, args, interpreter):
-        if len(self.parameters) != len(args):
-            raise InvalidArgsCountError(self.name, self.position)
-        env = Environment(parent=interpreter.env)
-        for param, arg in zip(self.parameters, args):
-            env.declare_variable(param.name, arg)
-        interpreter.execute_block(self.block, env)
-        return_value = interpreter.return_value
-        interpreter.return_encountered = False
-        interpreter.return_value = None
-        return return_value
+        visitor.visit_function_definition(self)
 
 
-class Block(Node):
+class Block(Statement):
     def __init__(self, statements):
         super().__init__(None)
         self.statements = statements
 
     def accept(self, visitor):
-        return visitor.visit_block(self)
+        visitor.visit_block(self)
 
 
-class VariableDeclaration(Node):
+class VariableDeclaration(Statement):
     def __init__(self, name, value_expr, position):
         super().__init__(position)
         self.name = name
         self.value_expr = value_expr
 
     def accept(self, visitor):
-        return visitor.visit_variable_declaration(self)
+        visitor.visit_variable_declaration(self)
 
 
-class FunctionCall(Node):
+class FunctionCall(Statement):
     def __init__(self, name, args, position, parent):
         super().__init__(position)
         self.name = name
@@ -91,20 +72,30 @@ class FunctionCall(Node):
         self.parent = parent
 
     def accept(self, visitor):
-        return visitor.visit_function_call(self)
+        visitor.visit_function_call(self)
 
 
-class Assignment(Node):
+class Assignment(Statement):
     def __init__(self, name, value_expr, position):
         super().__init__(position)
         self.name = name
         self.value_expr = value_expr
 
     def accept(self, visitor):
-        return visitor.visit_assignment(self)
+        visitor.visit_assignment(self)
 
 
-class BinaryOperation(Node):
+class Identifier(Statement):
+    def __init__(self, name, position, parent):
+        super().__init__(position)
+        self.name = name
+        self.parent = parent
+
+    def accept(self, visitor):
+        visitor.visit_identifier(self)
+
+
+class BinaryOperation(Statement):
     def __init__(self, operator, left, right, position):
         super().__init__(position)
         self.operator = operator
@@ -112,20 +103,20 @@ class BinaryOperation(Node):
         self.right = right
 
     def accept(self, visitor):
-        return visitor.visit_binary_operation(self)
+        visitor.visit_binary_operation(self)
 
 
-class UnaryOperation(Node):
+class UnaryOperation(Statement):
     def __init__(self, operator, right, position):
         super().__init__(position)
         self.operator = operator
         self.right = right
 
     def accept(self, visitor):
-        return visitor.visit_unary_operation(self)
+        visitor.visit_unary_operation(self)
 
 
-class Literal(Node):
+class Literal(Statement):
     def __init__(self, value, position):
         super().__init__(position)
         self.value = value
@@ -136,7 +127,7 @@ class IntLiteral(Literal):
         super().__init__(value, position)
 
     def accept(self, visitor):
-        return visitor.visit_int_literal(self)
+        visitor.visit_int_literal(self)
 
 
 class FloatLiteral(Literal):
@@ -144,7 +135,7 @@ class FloatLiteral(Literal):
         super().__init__(value, position)
 
     def accept(self, visitor):
-        return visitor.visit_float_literal(self)
+        visitor.visit_float_literal(self)
 
 
 class BoolLiteral(Literal):
@@ -152,7 +143,7 @@ class BoolLiteral(Literal):
         super().__init__(value, position)
 
     def accept(self, visitor):
-        return visitor.visit_bool_literal(self)
+        visitor.visit_bool_literal(self)
 
 
 class StringLiteral(Literal):
@@ -160,7 +151,7 @@ class StringLiteral(Literal):
         super().__init__(value, position)
 
     def accept(self, visitor):
-        return visitor.visit_string_literal(self)
+        visitor.visit_string_literal(self)
 
 
 class NullLiteral(Literal):
@@ -168,39 +159,39 @@ class NullLiteral(Literal):
         super().__init__(value, position)
 
     def accept(self, visitor):
-        return visitor.visit_null_literal(self)
+        visitor.visit_null_literal(self)
 
 
-class ReturnStatement(Node):
+class ReturnStatement(Statement):
     def __init__(self, value_expr, position):
         super().__init__(position)
         self.value_expr = value_expr
 
     def accept(self, visitor):
-        return visitor.visit_return_statement(self)
+        visitor.visit_return_statement(self)
 
 
-class IfStatement(Node):
+class IfStatement(Statement):
     def __init__(self, condition, block, position):
         super().__init__(position)
         self.condition = condition
         self.block = block
 
     def accept(self, visitor):
-        return visitor.visit_if_statement(self)
+        visitor.visit_if_statement(self)
 
 
-class WhileStatement(Node):
+class WhileStatement(Statement):
     def __init__(self, condition, block, position):
         super().__init__(position)
         self.condition = condition
         self.block = block
 
     def accept(self, visitor):
-        return visitor.visit_while_statement(self)
+        visitor.visit_while_statement(self)
 
 
-class ForeachStatement(Node):
+class ForeachStatement(Statement):
     def __init__(self, variable, iterable, block, position):
         super().__init__(position)
         self.variable = variable
@@ -208,16 +199,16 @@ class ForeachStatement(Node):
         self.block = block
 
     def accept(self, visitor):
-        return visitor.visit_foreach_statement(self)
+        visitor.visit_foreach_statement(self)
 
 
 class Visitor(ABC):
     @abstractmethod
-    def visit_program(self, node):
+    def visit_program(self, program):
         pass
 
     @abstractmethod
-    def visit_block(self, node):
+    def visit_block(self, block):
         pass
 
     @abstractmethod
@@ -282,4 +273,32 @@ class Visitor(ABC):
 
     @abstractmethod
     def visit_null_literal(self, node):
+        pass
+
+    @abstractmethod
+    def visit_print(self, fun, args):
+        pass
+
+    @abstractmethod
+    def visit_int(self, fun, value):
+        pass
+
+    @abstractmethod
+    def visit_float(self, fun, value):
+        pass
+
+    @abstractmethod
+    def visit_bool(self, fun, value):
+        pass
+
+    @abstractmethod
+    def visit_str(self, fun, value):
+        pass
+
+    @abstractmethod
+    def visit_to_upper(self, fun, value):
+        pass
+
+    @abstractmethod
+    def visit_to_lower(self, fun, value):
         pass
