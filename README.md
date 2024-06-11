@@ -10,7 +10,7 @@ Wreszcie, w tym języku przekazywanie argumentów funkcji odbywa się przez wart
 
 #### Typy danych
 W języku występuje tylko kilka rodzajów danych:\
-Wartości logiczne. Istnieją dwa rodzaje wartości logicznych: True i False.\
+Wartości logiczne. Istnieją dwa rodzaje wartości logicznych: true i false.\
 Liczby. W języku występują dwa rodzaje liczb: int i float.\
 Ciągi znaków. Ciągi znaków są umieszczone w podwójnych cudzysłowach.
 
@@ -26,9 +26,9 @@ Ciągi znaków. Ciągi znaków są umieszczone w podwójnych cudzysłowach.
 | &#124;&#124; (logiczne LUB)       | 6 (Najniższy) | Lewostronny    |
 
 #### Typy i operatory
-Typy int i float obsługują następujące operatory: +, -, *, /, %, ==, !=, >, >=, <, <=\
+Typy int i float obsługują następujące operatory: +, -, *, /, ==, !=, >, >=, <, <=\
 Typ string obsługuje następujące operatory: +, *, ==, !=\
-Typ bool obsługuje następujące operatory: ==, !=, &&, ||
+Typ bool obsługuje następujące operatory: +, -, *, /, ==, !=, &&, ||
 
 ##### Arytmetyka
 ```
@@ -44,6 +44,7 @@ Typ bool obsługuje następujące operatory: ==, !=, &&, ||
 "1.05a" + 1             # "1.05a1"
 2 + 1.5 + "gf"          # "3.5gf"
 1.5 + 2                 # 3.5
+4 + true                # 5
 ```
 
 ##### Porównanie

@@ -1,0 +1,10 @@
+print("world".toUpper())
+print("value".length)
+print(int("4") + 2)
+print(int(44.5))
+print(bool(1))
+print(float(3))
+print("FFFF".toLower())
+
+value x = "HI!"
+print(x.length)

@@ -72,7 +72,6 @@ class Interpreter(Visitor):
 
     def visit_function_call(self, func_call):
         func = self.env.get_function(func_call.name)
-        self.return_encountered = False
         self.return_value = None
 
         if func_call.parent:
@@ -100,6 +99,7 @@ class Interpreter(Visitor):
                 func.block.accept(self)
                 self.result = self.return_value
                 self.env.del_scope()
+                self.return_encountered = False
             finally:
                 self.recursion_depth -= 1
 
