@@ -10,7 +10,7 @@ Wreszcie, w tym języku przekazywanie argumentów funkcji odbywa się przez wart
 
 #### Typy danych
 W języku występuje tylko kilka rodzajów danych:\
-Wartości logiczne. Istnieją dwa rodzaje wartości logicznych: True i False.\
+Wartości logiczne. Istnieją dwa rodzaje wartości logicznych: true i false.\
 Liczby. W języku występują dwa rodzaje liczb: int i float.\
 Ciągi znaków. Ciągi znaków są umieszczone w podwójnych cudzysłowach.
 
@@ -26,9 +26,9 @@ Ciągi znaków. Ciągi znaków są umieszczone w podwójnych cudzysłowach.
 | &#124;&#124; (logiczne LUB)       | 6 (Najniższy) | Lewostronny    |
 
 #### Typy i operatory
-Typy int i float obsługują następujące operatory: +, -, *, /, %, ==, !=, >, >=, <, <=\
+Typy int i float obsługują następujące operatory: +, -, *, /, ==, !=, >, >=, <, <=\
 Typ string obsługuje następujące operatory: +, *, ==, !=\
-Typ bool obsługuje następujące operatory: ==, !=, &&, ||
+Typ bool obsługuje następujące operatory: +, -, *, /, ==, !=, &&, ||
 
 ##### Arytmetyka
 ```
@@ -44,6 +44,7 @@ Typ bool obsługuje następujące operatory: ==, !=, &&, ||
 "1.05a" + 1             # "1.05a1"
 2 + 1.5 + "gf"          # "3.5gf"
 1.5 + 2                 # 3.5
+4 + true                # 5
 ```
 
 ##### Porównanie
@@ -80,8 +81,7 @@ print(hello * 2)
 
 #### 3. Przykład komentarza:
 ```
-// To jest komentarz
-# To też jest komentarz
+# To jest komentarz
 ```
 
 #### 4. Przykład instrukcji warunkowej if:
@@ -136,35 +136,44 @@ foreach char in word {
 }
 ```
 
-#### 9. Przykładowe wejście
-```
-value age = input("Enter your age: ")
-```
-
-#### 10. Funkcje wbudowane
+#### 9. Funkcje wbudowane
 ```
 5 + int(2.1)            # 7
 ```
 
-#### 11. String z atrybutem
+#### 10. String z atrybutem
 ```
-print(!'shoes'.length)  # false
-print(-'shoes'.length)  # -5
+print(!"shoes".length)  # false
+print("shoes".length)   # 5
 
 value a = "hello"
 print(a.length)         # 5
 ```
 
-#### 12. String z metodami
+#### 11. String z metodami
 ```
-
-print("test".char(0))
-
 print("TeSt".toLower()) # test
 
 value test = "test"
 print(test.toUpper())   # TEST
 ```
+
+#### 12. Logical and
+```
+true && false  # false
+true && true   # true
+```
+Operator logical and (&&) sprawdza warunki, zwracając wartość fałszywą (false),\
+gdy którykolwiek z operandów jest fałszywy, i prawdziwą (true), gdy oba operandy są prawdziwe.\
+
+#### 13. Logical or
+```
+true || false  # true
+true || true   # true
+```
+Operator logical or (||) sprawdza warunki, zwracając wartość prawdziwą (true),\
+gdy którykolwiek z operandów jest prawdziwy, i fałszywą (false), gdy oba operandy są fałszywe.\
+
 
 #### Słaba, dynamiczna typizacja:
 ```
@@ -179,7 +188,7 @@ value x = true          # x jest teraz wartością logiczną (bool)
 value a = 4
 
 function test(t) {
-    a = 3
+    value a = 3
     print(a)            # 3
     t = t + 1
     print(t)            # 2
@@ -188,7 +197,7 @@ function test(t) {
 function main() {
     value t = 1
     test(t)
-    print(a)            # 3
+    print(a)            # 4
     print(t)            # 1
 }
 
@@ -284,30 +293,35 @@ special_character = " " | "!" | "#" | "$" | "%"
 W przypadku napotkania błędu, zgłaszany jest odpowiedni wyjątek, praca nie jest kontynuowana i użytkownik otrzymuje komunikat o błędzie.\
 Komunikaty o błędach mogą zawierać informacje o mejsce błędu, gdzie zostsał napotkany.
 ```
-Error line 2:
-Undefined variable: 'x'
+Variable 'x' not defined: Line: 1, Column: 7
 ```
 
 ```
-Error line 2:
-Undefined function 'add'
+Expected 'in': Line: 21, Column: 14
 ```
 
 ```
-Error line 2:
-Wrong number of arguments
+Invalid count of args for add: Line: 7, Column: 10
 ```
 
 ```
-Error line 2:
-Syntax Error: Expected '}' to close block
+Expected '}' to close block: Line: 5, Column 1
 ```
 
 ### Sposób uruchomienia
 
-Może być uruchamiany z wiersza poleceń, gdzie użytkownik podaje plik źródłowy jako argument.
+Instalacja
+```
+git clone https://gitlab-stud.elka.pw.edu.pl/TKOM_24L_PG/Roman_Ishchuk/tkom24l-rishchuk.git
+cd tkom24l-rishchuk
+```
+
+Może być uruchamiany z wiersza poleceń, gdzie użytkownik podaje plik źródłowy (z rozszerzeniem .xd) jako argument.
 
 Po wykonaniu interpretera, można oczekiwać wyjście na konsoli.
+```
+python main.py [file.xd]
+```
 
 ### Analiza wymagań funkcjonalnych i niefunkcjonalnych
 
@@ -328,7 +342,9 @@ Modułów:
 
 Token i Lexer odpowiedzialne za analizę leksykalną.\
 Environment, Interpreter do obsługi semantyki języka i wykonywania kodu.\
-Parser, który analizuje strukturę kodu i generuje drzewo składniowe.
+Parser, który analizuje strukturę kodu i generuje drzewo składniowe.\
+Environment zarządza zmiennymi i funkcjami.\
+
 
 Interakcje między modułami:
 
@@ -343,3 +359,11 @@ Sprawdzanie poprawności analizy leksykalnej, czy tokeny są generowane prawidł
 Analizę składniową, czy parser prawidłowo interpretuje strukturę kodu.\
 Wykonywanie testów na różnych przykładach z różnymi operacjami matematycznymi, logicznymi i operacjami na ciągach znaków.
 Obsługę błędów, takie jak próby użycia niezadeklarowanych zmiennych lub funkcji.
+
+
+#### Testy folder
+
+Testy jednostkowe znajdują się w folderze "tests" i są uruchamiane za pomocą unittest.\
+Mamy testy działania interpretera, parsera i lexera.\
+W interpreterze testują  różne aspekty tym deklaracje zmiennych, definicje i wywołania funkcji, instrukcje warunkowe, pętle, operacje arytmetyczne i logiczne, operacje na stringu\
+oraz funkcje wbudowane. Testy obejmują przypadki poprawne, jak i błędne

@@ -1,12 +1,12 @@
-from src.lexer.lexer import Lexer, CharacterReader, TokenType, StringIO
-from src.errors.parser_errors import ExpectedFunctionNameError, ParserError, ExpectedLeftParentAfterFun, \
+from lexer.lexer import Lexer, CharacterReader, TokenType, StringIO
+from errors.parser_errors import ExpectedFunctionNameError, ParserError, ExpectedLeftParentAfterFun, \
     ExpectedRightParentAfterFun, ExpectedBlockError, ExpectedParameterAfterCommaError, ExpectedRightBraceError, \
     ExpectedLoopVariableError, ExpectedExpressionError, ExpectedInError, ExpectedConditionError, \
     ExpectedVariableNameError, ExpectedAssignmentOrFunctionCall, ExpectedRightParentAfterFunCall, \
     ExpectedArgumentAfterCommaError, ExpectedRightParentAfterExpression, ExpectedIdentifierAfterDotError, \
     UnexpectedTokenError
 from enum import Enum, auto
-from src.parser.models import *
+from parser.models import *
 
 
 class Operators(Enum):
@@ -365,7 +365,7 @@ class Parser:
     # a.b.c
     # c -> b -> a
 
-    def parse_literal(self):  # int_literal, bool_literal ...
+    def parse_literal(self):
         value = self.token.value
         position = self.token.position
 
@@ -377,6 +377,8 @@ class Parser:
             return BoolLiteral(value, position)
         if self.maybe(TokenType.FALSE_CONST):
             return BoolLiteral(value, position)
+        if self.maybe(TokenType.NULL):
+            return NullLiteral(value, position)
         if self.maybe(TokenType.STRING):
             literal = StringLiteral(value, position)
             return self.parse_dot_chain(literal)
@@ -393,6 +395,8 @@ class Parser:
 
     def advance(self):
         self.token = self.lexer.get_next_token()
+        if self.token.type == TokenType.COMMENT:
+            self.advance()
 
 
 if __name__ == "__main__":

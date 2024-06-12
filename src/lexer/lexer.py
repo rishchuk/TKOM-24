@@ -3,6 +3,8 @@ from enum import Enum, auto
 import sys
 from io import StringIO
 
+from errors.lexer_errors import LexerError
+
 
 class TokenType(Enum):
     IF = auto()
@@ -18,6 +20,7 @@ class TokenType(Enum):
     TRUE_CONST = auto()
     FALSE_CONST = auto()
     STRING = auto()
+    NULL = auto()
     EQUAL = auto()
     ADD_OPERATOR = auto()
     MINUS_OPERATOR = auto()
@@ -51,7 +54,8 @@ KEYWORDS = {
     'function': TokenType.FUNCTION,
     'return': TokenType.RETURN,
     'true': TokenType.TRUE_CONST,
-    'false': TokenType.FALSE_CONST
+    'false': TokenType.FALSE_CONST,
+    'null': TokenType.NULL
 }
 
 OPERATORS = {
@@ -176,7 +180,7 @@ class Lexer:
         if token:
             return token
         else:
-            raise SyntaxError('Unknown token')
+            raise LexerError('Unknown token', self.start_position)
 
     def try_build_logical_operator(self, value, token_type):
         if self.current_char != value[0]:
@@ -186,7 +190,7 @@ class Lexer:
         if self.current_char == value[1]:
             self.advance()
             return Token(token_type, self.start_position)
-        raise SyntaxError('Unknown token')
+        raise LexerError('Unknown token', self.start_position)
 
     def try_build_one_char_operator(self):
         if self.current_char in OPERATORS:
@@ -206,22 +210,13 @@ class Lexer:
         else:
             return Token(one_token_char, self.start_position)
 
-    def build_undefined(self):
-        builder = []
-        while self.current_char and not self.current_char.isspace() and self.current_char != '\x03':
-            builder.append(self.current_char)
-            self.advance()
-
-        return Token(TokenType.UNDEFINED, self.start_position, ''.join(builder))
-
     def try_build_keyword_or_identifier(self):
         if self.current_char.isalpha() or self.current_char == "_":
             builder = []
             while self.current_char.isalnum() or self.current_char == "_":
                 if len(builder) == self.IDENTIFIER_MAX_LENGTH:
-                    raise ValueError(f"Identifier length have the maximum limit of {self.IDENTIFIER_MAX_LENGTH}"
-                                     f" characters at at Line: {self.start_position.line}, "
-                                     f"Column: {self.start_position.column}")
+                    raise LexerError(f"Identifier length have the maximum limit of {self.IDENTIFIER_MAX_LENGTH}",
+                                     self.start_position)
                 builder.append(self.current_char)
                 self.advance()
             value = ''.join(builder)
@@ -241,8 +236,7 @@ class Lexer:
             if (sys.maxsize - int(self.current_char)) // 10 >= value:
                 value = value * 10 + int(self.current_char)
             else:
-                raise ValueError(f"Integer overflow at Line: {self.start_position.line}, "
-                                 f"Column: {self.start_position.column}")
+                raise LexerError(f"Integer overflow", self.start_position)
 
             self.advance()
 
@@ -255,8 +249,7 @@ class Lexer:
         decimal_length = 0
         while self.current_char.isdecimal():
             if decimal_length > sys.float_info.dig:
-                raise ValueError(f"Float overflow at Line: {self.start_position.line}, "
-                                 f"Column: {self.start_position.column}")
+                raise LexerError(f"Float overflow", self.start_position)
 
             decimal_part = decimal_part * 10 + int(self.current_char)
             decimal_length += 1
@@ -272,9 +265,8 @@ class Lexer:
 
             while self.current_char != '"':
                 if self.current_char == '\x03' or self.current_char == '\n':
-                    raise SyntaxError(
-                        f"Unterminated string literal at Line: {self.start_position.line}, "
-                        f"Column: {self.start_position.column}")
+                    raise LexerError(
+                        f"Unterminated string literal", self.start_position)
                 elif len(builder) == self.STRING_MAX_LENGTH:
                     raise ValueError(f"String length exceeds the maximum limit of {self.STRING_MAX_LENGTH} characters")
 
@@ -299,8 +291,7 @@ class Lexer:
         elif self.current_char == '\\':
             return '\\'
         else:
-            raise SyntaxError(f"Invalid escape character \\{self.current_char} at "
-                              f"Line: {self.start_position.line}, Column: {self.start_position.column}")
+            raise LexerError(f"Invalid escape character \\{self.current_char}", self.start_position)
 
 
 if __name__ == '__main__':
@@ -375,3 +366,6 @@ recursive_add(c)
         sys.exit()
     except StopIteration:
         pass
+    except LexerError as e:
+        print(e)
+

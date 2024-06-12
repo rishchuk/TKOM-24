@@ -1,0 +1,46 @@
+
+function recursive_add(x) {
+    if x == 5 {
+        return x
+    }
+    if x >= 5 {
+        x = x - 1
+        recursive_add(x)
+    }
+}
+
+value c = 8
+print(recursive_add(c))
+
+value a = 4
+
+function test(t) {
+    value a = 3
+    print(a)            # 3
+    t = t + 1
+    print(t)            # 2
+}
+
+function main() {
+    value t = 1
+    print(test(t))
+    print(a)            # 4
+    print(t)            # 1
+}
+
+main()
+
+function abc() {
+    value d = 2
+    abd()
+}
+
+function abd() {
+    fff()
+}
+
+function fff() {
+    #print(d)  # error!!!
+}
+
+abc()

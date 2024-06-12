@@ -1,4 +1,6 @@
 import io
+
+from errors.lexer_errors import LexerError
 from src.lexer.lexer import Lexer, CharacterReader, TokenType
 import unittest
 from sys import maxsize
@@ -12,31 +14,31 @@ class TestLexer(unittest.TestCase):
 
     def test_identifier_max_length(self):
         code = io.StringIO('a' * (self.identifier_max_length + 1))
-        with self.assertRaises(ValueError):
+        with self.assertRaises(LexerError):
             lexer = Lexer(CharacterReader(code))
             lexer.get_next_token()
 
     def test_number_max_value(self):
         code = io.StringIO(str(self.number_max_value + 1))
         lexer = Lexer(CharacterReader(code))
-        with self.assertRaises(ValueError):
+        with self.assertRaises(LexerError):
             lexer.get_next_token()
 
     def test_string_max_length(self):
         code = io.StringIO('a' * (self.string_max_length + 1))
         lexer = Lexer(CharacterReader(code))
-        with self.assertRaises(ValueError):
+        with self.assertRaises(LexerError):
             lexer.get_next_token()
 
     def test_unterminated_string_literal(self):
         code = io.StringIO('"string')
         lexer = Lexer(CharacterReader(code))
-        with self.assertRaises(SyntaxError):
+        with self.assertRaises(LexerError):
             lexer.get_next_token()
 
     def test_build_string_with_invalid_escape_character(self):
         lexer = Lexer(CharacterReader(io.StringIO('"Hello,\\gWorld!"')))
-        with self.assertRaises(SyntaxError):
+        with self.assertRaises(LexerError):
             lexer.get_next_token()
 
     def test_count_tokens(self):
@@ -91,7 +93,7 @@ class TestLexer(unittest.TestCase):
     def test_all_tokens(self):
         code = io.StringIO("""
         if while foreach in value return function identifier 
-        10 10.5 true false "string" = + - * / < > () {} == != <= >= && || #
+        10 10.5 true false "string" null = + - * / < > () {} == != <= >= && || #
         , . !
         """
                            )
@@ -175,7 +177,7 @@ class TestLexer(unittest.TestCase):
     def test_build_undefined_token(self):
         code = io.StringIO('$va7_ue x')
         lexer = Lexer(CharacterReader(code))
-        with self.assertRaises(SyntaxError):
+        with self.assertRaises(LexerError):
             lexer.get_next_token()
 
     def test_try_build_keyword_or_identifier(self):

@@ -1,0 +1,16 @@
+value hello = "Hello, "
+value z = 30
+value x = 10
+
+if z >= 10 && hello == "Hello, " {
+    print("z is greater than 10 and hello is Hello, ")
+}
+
+while x > 2 {
+    print(x)
+    x = x - 1
+}
+
+foreach char in "word" {
+    print(char)
+}

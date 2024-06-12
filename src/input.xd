@@ -18,29 +18,34 @@ while x > 0 {
     x = x - 1
 }
 
+foreach char in "word" {
+    print(char)
+}
+
+function abb() {
+    z = 2
+}
+
 function add(x, y) {
     value z = x + y
-    print(z)
+    return z
 }
 
 value a = 10
 value b = 5
-add(a, b)
+print(add(a, b))
 
 function recursive_add(x) {
     if x == 5 {
-        return 0
+        return x
     }
     if x >= 5 {
-        x = x - 1
+        x = x - 1   # RecursionError: maximum recursion depth exceeded
         recursive_add(x)
     }
 }
 
-value a = "hello"
-
-
-value word = input()
-
+a = "hello".length
+print(a)
 value c = 8
 recursive_add(c)
