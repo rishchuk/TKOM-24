@@ -312,8 +312,8 @@ Expected '}' to close block: Line: 5, Column 1
 
 Instalacja
 ```
-git clone https://gitlab-stud.elka.pw.edu.pl/TKOM_24L_PG/Roman_Ishchuk/tkom24l-rishchuk.git
-cd tkom24l-rishchuk
+git clone https://github.com/rishchuk/TKOM-24.git
+cd TKOM-24
 ```
 
 Może być uruchamiany z wiersza poleceń, gdzie użytkownik podaje plik źródłowy (z rozszerzeniem .xd) jako argument.
@@ -343,7 +343,7 @@ Modułów:
 Token i Lexer odpowiedzialne za analizę leksykalną.\
 Environment, Interpreter do obsługi semantyki języka i wykonywania kodu.\
 Parser, który analizuje strukturę kodu i generuje drzewo składniowe.\
-Environment zarządza zmiennymi i funkcjami.\
+Environment zarządza zmiennymi i funkcjami.
 
 
 Interakcje między modułami:
